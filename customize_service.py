@@ -31,6 +31,7 @@ class fatigue_driving_detection(PTServingBaseService):
 
         self.capture = 'test.mp4'
         self.result = 0
+        self.cancel_flag = threading.Event()
 
         self.width = 1920
         self.height = 1080
@@ -99,40 +100,43 @@ class fatigue_driving_detection(PTServingBaseService):
     
     # 检测是否转头
     def checkLookAround(self,f):
-        if np.abs(self.standard_pose[0] - f.euler[0]) >= 45 or np.abs(self.standard_pose[1] - f.euler[1]) >= 45 or \
-            np.abs(self.standard_pose[2] - f.euler[2]) >= 45:
-            self.look_around_frame += 1
-        else:
-            self.look_around_frame = 0
-        if self.look_around_frame >= self.frame_3s:
-            self.result = 4
-        return
+        while not self.cancel_flag.is_set():
+            if np.abs(self.standard_pose[0] - f.euler[0]) >= 45 or np.abs(self.standard_pose[1] - f.euler[1]) >= 45 or \
+                np.abs(self.standard_pose[2] - f.euler[2]) >= 45:
+                self.look_around_frame += 1
+            else:
+                self.look_around_frame = 0
+            if self.look_around_frame >= self.frame_3s:
+                self.result = 4
+            return
     
     # 检测是否闭眼
     def checkClosedEyes(self,f):
-        leftEye = f.lms[self.lStart:self.lEnd]
-        rightEye = f.lms[self.rStart:self.rEnd]
-        leftEAR = eye_aspect_ratio(leftEye)
-        rightEAR = eye_aspect_ratio(rightEye)
-        # average the eye aspect ratio together for both eyes
-        ear = (leftEAR + rightEAR) / 2.0
-        if ear < self.EYE_AR_THRESH:
-            self.eyes_closed_frame += 1
-        else:
-            self.eyes_closed_frame = 0
-            # print(ear, eyes_closed_frame)
-        if self.eyes_closed_frame >= self.frame_3s:
-            self.result = 1
-        return
+        while not self.cancel_flag.is_set():
+            leftEye = f.lms[self.lStart:self.lEnd]
+            rightEye = f.lms[self.rStart:self.rEnd]
+            leftEAR = eye_aspect_ratio(leftEye)
+            rightEAR = eye_aspect_ratio(rightEye)
+            # average the eye aspect ratio together for both eyes
+            ear = (leftEAR + rightEAR) / 2.0
+            if ear < self.EYE_AR_THRESH:
+                self.eyes_closed_frame += 1
+            else:
+                self.eyes_closed_frame = 0
+                # print(ear, eyes_closed_frame)
+            if self.eyes_closed_frame >= self.frame_3s:
+                self.result = 1
+            return
 
     # 检测是否张嘴
     def checkMouthOpen(self,f):
-        mar = mouth_aspect_ratio(f.lms)
-        if mar > self.MOUTH_AR_THRESH:
-            self.mouth_open_frame += 1
-        if self.mouth_open_frame >= self.frame_3s:
-            self.result = 2
-        return
+        while not self.cancel_flag.is_set():
+            mar = mouth_aspect_ratio(f.lms)
+            if mar > self.MOUTH_AR_THRESH:
+                self.mouth_open_frame += 1
+            if self.mouth_open_frame >= self.frame_3s:
+                self.result = 2
+            return
         
         
 
@@ -196,20 +200,28 @@ class fatigue_driving_detection(PTServingBaseService):
                                 face_num = face_num_index
                                 max_x = f.bbox[3]
 
+
+
                         f = faces[face_num]
                         f = copy.copy(f)
 
                         pool = ThreadPoolExecutor(3)
+
                         lookAround = pool.submit(self.checkLookAround,self,f)
                         mouthOpen = pool.submit(self.checkMouthOpen,self,f)
                         eyeClosed = pool.submit(self.checkClosedEyes,self,f)
 
                         pool.shutdown()
 
-                        if self.result or (lookAround.done() and mouthOpen.done() and eyeClosed.done()):
-                            if self.result:
-                                result['result']['category'] = self.result
+                        while not self.result:
+                            if (lookAround.done() and mouthOpen.done() and eyeClosed.done()):
                                 break
+
+                        if self.result:
+                            self.cancel_flag.set()
+                            result['result']['category'] = self.result
+                            break
+
                     else:
                         if self.face_detect:
                             self.look_around_frame += 1
