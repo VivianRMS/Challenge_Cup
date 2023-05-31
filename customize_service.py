@@ -152,6 +152,7 @@ class fatigue_driving_detection(PTServingBaseService):
         source_name = self.input_reader.name
         now = time.time()
         while self.input_reader.is_open():
+            frame_num = 0
 
             if not self.input_reader.is_open() or self.need_reinit == 1:
                 self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps, use_dshowcapture=False, dcap=None)
@@ -207,17 +208,19 @@ class fatigue_driving_detection(PTServingBaseService):
 
                         pool = ThreadPoolExecutor(3)
 
-                        lookAround = pool.submit(self.checkLookAround,self,f)
-                        mouthOpen = pool.submit(self.checkMouthOpen,self,f)
-                        eyeClosed = pool.submit(self.checkClosedEyes,self,f)
+                        lookAround = pool.submit(self.checkLookAround,f)
+                        mouthOpen = pool.submit(self.checkMouthOpen,f)
+                        eyeClosed = pool.submit(self.checkClosedEyes,f)
 
                         pool.shutdown()
 
                         while not self.result:
                             if (lookAround.done() and mouthOpen.done() and eyeClosed.done()):
+                                print(f"{frame_num} All done not found!")
                                 break
 
                         if self.result:
+                            print(f"Done, found, result is: {self.result}")
                             self.cancel_flag.set()
                             result['result']['category'] = self.result
                             break
@@ -243,6 +246,7 @@ class fatigue_driving_detection(PTServingBaseService):
                 if self.failures > 30:   # 失败超过30次就默认返回
                     break
             del frame
+            frame_num+=1
         final_time = time.time()
         duration = int(np.round((final_time - now) * 1000))
         result['result']['duration'] = duration
