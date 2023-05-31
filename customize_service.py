@@ -1,3 +1,4 @@
+# 推理代码 展示
 from PIL import Image
 import copy
 import sys
@@ -18,6 +19,9 @@ from utils1.torch_utils import TracedModel
 from detect import detect
 from model_service.pytorch_model_service import PTServingBaseService
 
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 
 class fatigue_driving_detection(PTServingBaseService):
     def __init__(self, model_name, model_path):
@@ -26,6 +30,7 @@ class fatigue_driving_detection(PTServingBaseService):
         self.model_path = model_path
 
         self.capture = 'test.mp4'
+        self.result = 0
 
         self.width = 1920
         self.height = 1080
@@ -46,7 +51,7 @@ class fatigue_driving_detection(PTServingBaseService):
         # (mStart, mEnd) = (49, 66)
         self.mStart = 49
         self.mEnd = 66
-        self.EYE_AR_THRESH = 0.1
+        self.EYE_AR_THRESH = 0.2
         self.MOUTH_AR_THRESH = 0.6
         self.frame_3s = self.fps * 3
         self.face_detect = 0
@@ -91,6 +96,45 @@ class fatigue_driving_detection(PTServingBaseService):
                 except Exception:
                     return {"message": "There was an error processing the file"}
         return 'ok'
+    
+    # 检测是否转头
+    def checkLookAround(self,f):
+        if np.abs(self.standard_pose[0] - f.euler[0]) >= 45 or np.abs(self.standard_pose[1] - f.euler[1]) >= 45 or \
+            np.abs(self.standard_pose[2] - f.euler[2]) >= 45:
+            self.look_around_frame += 1
+        else:
+            self.look_around_frame = 0
+        if self.look_around_frame >= self.frame_3s:
+            self.result = 4
+        return
+    
+    # 检测是否闭眼
+    def checkClosedEyes(self,f):
+        leftEye = f.lms[self.lStart:self.lEnd]
+        rightEye = f.lms[self.rStart:self.rEnd]
+        leftEAR = eye_aspect_ratio(leftEye)
+        rightEAR = eye_aspect_ratio(rightEye)
+        # average the eye aspect ratio together for both eyes
+        ear = (leftEAR + rightEAR) / 2.0
+        if ear < self.EYE_AR_THRESH:
+            self.eyes_closed_frame += 1
+        else:
+            self.eyes_closed_frame = 0
+            # print(ear, eyes_closed_frame)
+        if self.eyes_closed_frame >= self.frame_3s:
+            self.result = 1
+        return
+
+    # 检测是否张嘴
+    def checkMouthOpen(self,f):
+        mar = mouth_aspect_ratio(f.lms)
+        if mar > self.MOUTH_AR_THRESH:
+            self.mouth_open_frame += 1
+        if self.mouth_open_frame >= self.frame_3s:
+            self.result = 2
+        return
+        
+        
 
     def _inference(self, data):
         """
@@ -103,11 +147,8 @@ class fatigue_driving_detection(PTServingBaseService):
         self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps)
         source_name = self.input_reader.name
         now = time.time()
-        self.look_around_frame = 0
-        self.eyes_closed_frame = 0
-        self.mouth_open_frame = 0
-        self.use_phone_frame = 0
         while self.input_reader.is_open():
+
             if not self.input_reader.is_open() or self.need_reinit == 1:
                 self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps, use_dshowcapture=False, dcap=None)
                 if self.input_reader.name != source_name:
@@ -139,6 +180,11 @@ class fatigue_driving_detection(PTServingBaseService):
                         if box[0] == 1:
                             self.use_phone_frame += 1
 
+                    if self.use_phone_frame >= self.frame_3s:
+                        self.result = 3
+                        result['result']['category'] = 3
+                        break
+
                     # 检测驾驶员是否张嘴、闭眼、转头
                     faces = self.tracker.predict(frame)
                     if len(faces) > 0:
@@ -152,59 +198,26 @@ class fatigue_driving_detection(PTServingBaseService):
 
                         f = faces[face_num]
                         f = copy.copy(f)
-                        # 检测是否转头
-                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 45 or np.abs(self.standard_pose[1] - f.euler[1]) >= 45 or \
-                                np.abs(self.standard_pose[2] - f.euler[2]) >= 45:
-                            self.look_around_frame += 1
-                        else:
-                            self.look_around_frame = 0
 
-                        # 检测是否闭眼
-                        # extract the left and right eye coordinates, then use the
-                        # coordinates to compute the eye aspect ratio for both eyes
-                        leftEye = f.lms[self.lStart:self.lEnd]
-                        rightEye = f.lms[self.rStart:self.rEnd]
-                        leftEAR = eye_aspect_ratio(leftEye)
-                        rightEAR = eye_aspect_ratio(rightEye)
-                        # average the eye aspect ratio together for both eyes
-                        ear = (leftEAR + rightEAR) / 2.0
+                        pool = ThreadPoolExecutor(3)
+                        lookAround = pool.submit(self.checkLookAround,self,f)
+                        mouthOpen = pool.submit(self.checkMouthOpen,self,f)
+                        eyeClosed = pool.submit(self.checkClosedEyes,self,f)
 
-                        if ear < self.EYE_AR_THRESH:
-                            self.eyes_closed_frame += 1
-                        else:
-                            self.eyes_closed_frame = 0
-                        # print(ear, eyes_closed_frame)
+                        pool.shutdown()
 
-                        # 检测是否张嘴
-                        mar = mouth_aspect_ratio(f.lms)
-
-                        if mar > self.MOUTH_AR_THRESH:
-                            self.mouth_open_frame += 1
-#                         print(mar)
-
-#                         print(len(f.lms), f.euler)
+                        if self.result or (lookAround.done() and mouthOpen.done() and eyeClosed.done()):
+                            if self.result:
+                                result['result']['category'] = self.result
+                                break
                     else:
                         if self.face_detect:
                             self.look_around_frame += 1
                             self.face_detect = 0
-                    # print(self.look_around_frame)
-                    if self.use_phone_frame >= self.frame_3s:
-                        result['result']['category'] = 3
-                        break
-
-                    elif self.look_around_frame >= self.frame_3s:
-                        result['result']['category'] = 4
-                        break
-
-                    elif self.mouth_open_frame >= self.frame_3s:
-                        result['result']['category'] = 2
-                        break
-
-                    elif self.eyes_closed_frame >= self.frame_3s:
-                        result['result']['category'] = 1
-                        break
-                    else:
-                        result['result']['category'] = 0
+                            if self.look_around_frame >= self.frame_3s:
+                                result['result']['category'] = 4
+                                break
+                    
 
                     self.failures = 0
                 else:
