@@ -1,0 +1,7 @@
+opencv-python
+onnxruntime
+scipy
+matplotlib
+seaborn
+numpy == 1.20.3
+pandas

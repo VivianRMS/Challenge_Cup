@@ -1,4 +1,3 @@
-# 推理代码 展示
 from PIL import Image
 import copy
 import sys
@@ -17,13 +16,15 @@ from utils1.general import check_img_size
 from tempfile import NamedTemporaryFile
 from utils1.torch_utils import TracedModel
 from detect import detect
-from model_service.pytorch_model_service import PTServingBaseService
+# from model_service.pytorch_model_service import PTServingBaseService
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 
-class fatigue_driving_detection(PTServingBaseService):
+
+# class fatigue_driving_detection(PTServingBaseService):
+class fatigue_driving_detection():
     def __init__(self, model_name, model_path):
         # these three parameters are no need to modify
         self.model_name = model_name
@@ -96,7 +97,7 @@ class fatigue_driving_detection(PTServingBaseService):
                 except Exception:
                     return {"message": "There was an error processing the file"}
         return 'ok'
-    
+
     # 检测是否转头
     def checkLookAround(self,f):
         if np.abs(self.standard_pose[0] - f.euler[0]) >= 45 or np.abs(self.standard_pose[1] - f.euler[1]) >= 45 or \
@@ -147,8 +148,10 @@ class fatigue_driving_detection(PTServingBaseService):
         self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps)
         source_name = self.input_reader.name
         now = time.time()
+        idx = 0
         while self.input_reader.is_open():
-
+            print("Inferring No.{0} image".format(idx))
+            idx += 1
             if not self.input_reader.is_open() or self.need_reinit == 1:
                 self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps, use_dshowcapture=False, dcap=None)
                 if self.input_reader.name != source_name:
@@ -179,11 +182,20 @@ class fatigue_driving_detection(PTServingBaseService):
                             self.face_detect = 1
                         if box[0] == 1:
                             self.use_phone_frame += 1
+                        
+                        # for visualization of detection bounding box
+                        if visualize:
+                            x1 = int((box[1][0]-box[1][2]/2)*(1920-600))
+                            y1 = int((box[1][1]-box[1][3]/2)*self.height)
+                            x2 = int((box[1][0]+box[1][2]/2)*(1920-600))
+                            y2 = int((box[1][1]+box[1][3]/2)*self.height)
+                            cv2.rectangle(
+                                frame,
+                                (x1, y1),
+                                (x2, y2),
+                                (255, 255, 255),
+                                1)
 
-                    if self.use_phone_frame >= self.frame_3s:
-                        self.result = 3
-                        result['result']['category'] = 3
-                        break
 
                     # 检测驾驶员是否张嘴、闭眼、转头
                     faces = self.tracker.predict(frame)
@@ -203,8 +215,17 @@ class fatigue_driving_detection(PTServingBaseService):
                         lookAround = pool.submit(self.checkLookAround,self,f)
                         mouthOpen = pool.submit(self.checkMouthOpen,self,f)
                         eyeClosed = pool.submit(self.checkClosedEyes,self,f)
-
                         pool.shutdown()
+
+                        # for visualization of face counter points 
+                        if visualize:
+                            for pt in f.lms:
+                                cv2.circle(
+                                    frame,
+                                    (int(pt[1]), int(pt[0])),
+                                    3,
+                                    (255, 255, 255),
+                                    1)
 
                         if self.result or (lookAround.done() and mouthOpen.done() and eyeClosed.done()):
                             if self.result:
@@ -217,9 +238,14 @@ class fatigue_driving_detection(PTServingBaseService):
                             if self.look_around_frame >= self.frame_3s:
                                 result['result']['category'] = 4
                                 break
-                    
+
 
                     self.failures = 0
+
+                    # opencv image showing code
+                    if visualize:
+                        cv2.imshow("frame", frame)
+                        key = cv2.waitKey(0)
                 else:
                     break
             except Exception as e:
@@ -237,5 +263,32 @@ class fatigue_driving_detection(PTServingBaseService):
         return result
 
     def _postprocess(self, data):
-        os.remove(self.capture)
+        # os.remove(self.capture)
         return data
+
+
+# Set if you want to visualize the image
+visualize = True
+
+if __name__ == "__main__":
+
+    # First set the location of the model
+    folder_name = "/fatigue_driver/"
+    detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
+
+    # Second set the location of the video
+    file_name = folder_name+"Fatigue_driving_detection_video/day_man_001_10_1.mp4"
+    
+    # data is not used acuatly
+    data = {
+        0: {
+            file_name : file_name
+        }
+    }
+
+    # pass the file_name directly to the capture variable to read
+    detector.capture = file_name
+    result = detector._inference(data)
+
+    print("Result of ", file_name, "is below:")
+    print(result)

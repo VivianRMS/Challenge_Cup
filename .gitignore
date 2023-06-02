@@ -1,0 +1,5 @@
+*.pyc
+__pycache__
+*.code-workspace
+
+traced_model.pt
