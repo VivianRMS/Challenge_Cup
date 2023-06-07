@@ -35,7 +35,7 @@ class fatigue_driving_detection():
 
         self.width = 1920
         self.height = 1080
-        self.fps = 30
+        self.fps = 15
         self.first = True
 
         self.standard_pose = [180, 40, 80]
@@ -52,7 +52,7 @@ class fatigue_driving_detection():
         # (mStart, mEnd) = (49, 66)
         self.mStart = 49
         self.mEnd = 66
-        self.EYE_AR_THRESH = 0.2
+        self.EYE_AR_THRESH = 0.3
         self.MOUTH_AR_THRESH = 0.6
         self.frame_3s = self.fps * 3
         self.face_detect = 0
@@ -182,6 +182,7 @@ class fatigue_driving_detection():
                             self.face_detect = 1
                         if box[0] == 1:
                             self.use_phone_frame += 1
+                            print(self.use_phone_frame)
                         
                         # for visualization of detection bounding box
                         if visualize:
@@ -245,7 +246,7 @@ class fatigue_driving_detection():
                     # opencv image showing code
                     if visualize:
                         cv2.imshow("frame", frame)
-                        key = cv2.waitKey(0)
+                        key = cv2.waitKey(100)
                 else:
                     break
             except Exception as e:
@@ -277,7 +278,7 @@ if __name__ == "__main__":
     detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
 
     # Second set the location of the video
-    file_name = folder_name+"Fatigue_driving_detection_video/day_man_001_10_1.mp4"
+    file_name = folder_name+"Fatigue_driving_detection_video/day_man_001_30_1.mp4"
     
     # data is not used acuatly
     data = {
