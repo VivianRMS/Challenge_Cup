@@ -12,6 +12,9 @@ from input_reader import InputReader
 from tracker import Tracker
 from EAR import eye_aspect_ratio
 from MAR import mouth_aspect_ratio
+from MAR import mouth_upper_ratio
+from MAR import mouth_lower_ratio
+
 
 from models.experimental import attempt_load
 from utils1.general import check_img_size
@@ -120,7 +123,7 @@ class fatigue_driving_detection():
         self.mouth_open_failure = 0
         self.use_phone_failure = 0
 
-        self.failure_threshold_normal = 4 #Reset to 0 when there are three failures! 
+        self.failure_threshold_normal = 5 #Reset to 0 when there are three failures! 
         self.failure_threshold_phone = 2 #Reset to 0 when there are three failures! 
 
         self.look_around_add_flag = False
@@ -175,19 +178,22 @@ class fatigue_driving_detection():
                 if frame is not None:
                     self.frame_num += 1
 
+                    # in case the image is not in the right size
+                    frame = cv2.resize(frame, (self.width, self.height))
                     # 剪裁主驾驶位
                     if self.cut_range == []:
-                        frame = frame[:, 600:1920, :]
+                        frame = frame[:, 700:1920, :]
                     else:
                         left_most = int((self.cut_range[0] - self.cut_range[2]/2) * (0.81) * 1920)
                         right_most = int((self.cut_range[0] + self.cut_range[2]/2) * (1.2) * 1920)
                         self.cut_picture_width = right_most - left_most
                         down_most = int((self.cut_range[1] - self.cut_range[3]/2) * (0.7) * 1920)
                         up_most = int((self.cut_range[1] + self.cut_range[3]/2) * (1.3) * 1920)
-                        if left_most > 600:
+                        if left_most > 550:
+                            
                             frame = frame[:, left_most:right_most, :]
                         else:
-                            frame = frame[:, 600:1920, :]
+                            frame = frame[:, 700:1920, :]
 
 
                     #whether_detect = False
@@ -216,12 +222,13 @@ class fatigue_driving_detection():
                                     1)
 
                         # 检测是否转头
-                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 55 or np.abs(self.standard_pose[1] - f.euler[1]) >= 55 or \
-                                np.abs(self.standard_pose[2] - f.euler[2]) >= 55:
+                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 60 or np.abs(self.standard_pose[1] - f.euler[1]) >= 60 or \
+                                np.abs(self.standard_pose[2] - f.euler[2]) >= 60:
                             self.look_around_frame += 1
                             self.look_around_failure = 0
                             self.look_around_add_flag = True
                             if visualize:
+                                print("MEMEMEMEME")
                                 print(">>>>>-------Look around: {}".format(self.look_around_frame))
                             if self.look_around_frame >= self.frame_3s:
                                 result['result']['category'] = 4
@@ -258,8 +265,10 @@ class fatigue_driving_detection():
 
                         # 检测是否张嘴
                         mar = mouth_aspect_ratio(f.lms)
+                        mur = mouth_upper_ratio(f.lms)
+                        mlr = mouth_lower_ratio(f.lms)
 
-                        if mar > self.MOUTH_AR_THRESH:
+                        if mar > self.MOUTH_AR_THRESH and mur < 1 and mlr < 1:
                             self.mouth_open_frame += 1
                             self.mouth_open_failure = 0
                             if visualize:
@@ -273,6 +282,21 @@ class fatigue_driving_detection():
                             self.mouth_open_frame = 0
                         else:
                             self.mouth_open_failure += 1
+                        
+                        if mar > self.MOUTH_AR_THRESH and (mur >= 1 or mlr >= 1):
+                            self.look_around_frame += 1
+                            self.look_around_failure = 0
+                            self.look_around_add_flag = True
+                            if visualize:
+                                print(">>>>>-------Look around: {}".format(self.look_around_frame))
+                            if self.look_around_frame >= self.frame_3s:
+                                result['result']['category'] = 4
+                                break
+                            elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                print("RESET!!!")
+                                self.mouth_open_frame = 0
+                            #whether_detect = True
+                            
                             #whether_detect = True
 #                         print(mar)
 
@@ -315,7 +339,7 @@ class fatigue_driving_detection():
                                     print("PPPPPPPPPP--------------Use Phone: {}".format(self.use_phone_frame))
                                 break
                         
-                        if self.use_phone_frame >= self.frame_3s/6 and self.look_around_frame >= self.frame_3s/3: 
+                        if self.use_phone_frame >= self.frame_3s/6 - 3 and self.look_around_frame >= self.frame_3s/3: 
                             self.look_around_frame = 0
                             print("RESET!")
                 
@@ -376,7 +400,7 @@ class fatigue_driving_detection():
 
 if __name__ == "__main__":
 
-    mode = "ALL"
+    mode = "Exam"
 
     if mode == "Examine":
         # Set if you want to visualize the image
@@ -387,7 +411,7 @@ if __name__ == "__main__":
         detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
 
         # Second set the location of the video
-        file_name = folder_name+"Fatigue_driving_detection_video/day_woman_007_30_2.mp4"
+        file_name = folder_name+"Fatigue_driving_detection_video/night_man_001_40_1.mp4"
         
         # data is not used acuatly
         data = {
@@ -416,7 +440,7 @@ if __name__ == "__main__":
 
         for filename in os.listdir(dir_folder_path):
             length += 1
-            if length <= 100:
+            if length <= 75:
                 image_name = os.path.join(dir_folder_path, filename)
                 data = {
                         0: {
@@ -451,7 +475,7 @@ if __name__ == "__main__":
                         if not(result["result"]["category"] ==  int(matchstr[1])):
                             all_false_file.append(filename)
         
-        with open("result.txt", "w") as file:
+        with open("result1.txt", "w") as file:
             file.write("All video numbers: {}\n".format(length))
             file.write("False video numbers: {}\n".format(len(all_false_file)))
             for item in all_false_file:

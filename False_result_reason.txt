@@ -1,0 +1,47 @@
+Result of  night_man_001_40_1.mp4 is below:
+{'result': {'category': 2, 'duration': 7432}}
+False
+Result of  day_woman_007_40_1.mp4 is below:
+{'result': {'category': 2, 'duration': 8159}}
+False
+转头时张嘴问题
+
+Result of  day_man_002_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 20104}}
+False
+Result of  night_man_002_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 20273}}
+False
+yolo 没检测出来
+
+Result of  day_man_002_31_2.mp4 is below:
+{'result': {'category': 4, 'duration': 9171}}
+False
+打电话的时候转头，通过减小清零阈值解决
+
+Result of  day_man_001_41_7.mp4 is below:
+{'result': {'category': 3, 'duration': 6582}}
+False
+刚开始黑屏，裁剪困难，检测到后座的手机
+
+Result of  day_man_001_10_1.mp4 is below:
+{'result': {'category': 0, 'duration': 23332}}
+False
+Result of  night_man_001_10_1.mp4 is below:
+{'result': {'category': 0, 'duration': 19738}}
+False
+Tracker精度不够/阈值不合理
+目前调整阈值 0.15->0.18，调整failure阈值为5，解决，可能伴随其他问题QAQ
+
+Result of  night_man_001_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 645}}
+False
+文件损坏导致问题
+
+Result of  day_woman_007_31_2.mp4 is below:
+{'result': {'category': 4, 'duration': 2551}}
+False
+Result of  day_man_001_40_7.mp4 is below:
+{'result': {'category': 0, 'duration': 23514}}
+False
+已解决，图片分辨率问题，将图片resize成1920，1080解决night_man_001_40_1

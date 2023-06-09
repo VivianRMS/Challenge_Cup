@@ -1,0 +1,15 @@
+All video numbers: 97
+False video numbers: 7
+day_man_002_30_2.mp4
+day_man_002_31_2.mp4
+day_man_001_41_7.mp4
+day_man_001_10_1.mp4
+night_man_001_10_1.mp4
+night_man_001_30_2.mp4
+night_man_002_30_2.mp4
+----------------F1 score----------------
+For categories 0, the F1-score is nan
+For categories 1, the F1-score is nan
+For categories 2, the F1-score is nan
+For categories 3, the F1-score is nan
+For categories 4, the F1-score is 0.6666666666666666
