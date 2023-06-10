@@ -14,7 +14,7 @@ from EAR import eye_aspect_ratio
 from MAR import mouth_aspect_ratio
 from MAR import mouth_upper_ratio
 from MAR import mouth_lower_ratio
-
+from scipy.spatial import distance as dist
 
 from models.experimental import attempt_load
 from utils1.general import check_img_size
@@ -48,12 +48,17 @@ class fatigue_driving_detection():
         # lStart, lEnd) = (42, 48)
         self.lStart = 42
         self.lEnd = 48
+        self.lori = 67
         # (rStart, rEnd) = (36, 42)
         self.rStart = 36
         self.rEnd = 42
+        self.rori = 66
         # (mStart, mEnd) = (49, 66)
         self.mStart = 49
         self.mEnd = 66
+        # self.teststart = 0
+        # self.testend = 68
+
         self.EYE_AR_THRESH = 0.15
         self.MOUTH_AR_THRESH = 0.6
         self.frame_3s = self.fps * 3
@@ -245,10 +250,57 @@ class fatigue_driving_detection():
                         rightEye = f.lms[self.rStart:self.rEnd]
                         leftEAR = eye_aspect_ratio(leftEye)
                         rightEAR = eye_aspect_ratio(rightEye)
-                        # average the eye aspect ratio together for both eyes
-                        ear = (leftEAR + rightEAR) / 2.0
+                        # test = f.lms[self.teststart:self.testend]
+                        leftori = f.lms[self.lori]
+                        rightori = f.lms[self.rori]
+                        # print(rightori)
+                        # print(rightEye[1])
+                        # print(rightEye[5])
 
-                        if ear < self.EYE_AR_THRESH:
+                        leftLU = dist.euclidean(leftEye[1], leftori)
+                        # print(leftLU)
+                        leftLP = dist.euclidean(leftEye[5], leftori)
+                        # print(leftLP)
+                        if (leftLU > leftLP):
+                            leftL = (leftLU/leftLP)
+                        else:
+                            leftL = (leftLP/leftLU)
+
+                        leftRU = dist.euclidean(leftEye[2], leftori)
+                        leftRP = dist.euclidean(leftEye[4], leftori)
+                        if (leftRU > leftRP):
+                            leftR = (leftRU/leftRP)
+                        else:
+                            leftR = (leftRP/leftRU)
+
+                        rightLU = dist.euclidean(rightEye[1], rightori)
+                        rightLP = dist.euclidean(rightEye[5], rightori)
+                        if (rightLU > rightLP):
+                            rightL = (rightLU/rightLP)
+                        else:
+                            rightL = (rightLP/rightLU)
+
+                        rightRU = dist.euclidean(rightEye[2], rightori)
+                        rightRP = dist.euclidean(rightEye[4], rightori)
+                        if (rightRU > rightRP):
+                            rightR = (rightRU/rightRP)
+                        else:
+                            rightR = (rightRP/rightRU)
+
+                        num = 0
+                        if (leftL > 1.5): num=num+1
+                        if (leftR > 1.5): num=num+1
+                        if (rightL > 1.5): num=num+1
+                        if (rightR > 1.5): num=num+1
+                        # print(num)
+
+                        # overlap_one = ((rightori[2] < rightEye[1][2]) and (rightori[2] < rightEye[5][2]) )
+                        # # or (leftori[2] > leftEye[1][2]) or (leftori[2] > leftEye[5][2]))  
+                        # overlap_two = ((rightori[2] < rightEye[2][2]) or (rightori[2] < rightEye[4][2]) or (leftori[2] < leftEye[2][2]) or (leftori[2] < leftEye[4][2]))  
+                        # # average the eye aspect ratio together for both eyes
+                        
+                        ear = (leftEAR + rightEAR) / 2.0
+                        if (ear < self.EYE_AR_THRESH or ( ear < self.EYE_AR_THRESH + 0.05 and num >= 1) ):
                             self.eyes_closed_frame += 1
                             self.eyes_closed_failure = 0
                             if visualize:
@@ -256,6 +308,12 @@ class fatigue_driving_detection():
                             if self.eyes_closed_frame >= self.frame_3s:
                                 result['result']['category'] = 1
                                 break
+                        # elif (ear > self.EYE_AR_THRESH or overlap_one ) :
+                        #     self.eyes_closed_frame += 1
+                        #     self.eyes_closed_failure = 0
+                        #     if self.eyes_closed_frame >= self.frame_overlap:
+                        #         result['result']['category'] = 1
+                        #         break
                         elif self.eyes_closed_failure >= self.failure_threshold_normal:
                             self.eyes_closed_frame = 0
                         else: 
@@ -411,7 +469,7 @@ if __name__ == "__main__":
         detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
 
         # Second set the location of the video
-        file_name = folder_name+"Fatigue_driving_detection_video/night_man_001_40_1.mp4"
+        file_name = folder_name+"Fatigue_driving_detection_video/night_man_001_10_1.mp4"
         
         # data is not used acuatly
         data = {
@@ -440,7 +498,7 @@ if __name__ == "__main__":
 
         for filename in os.listdir(dir_folder_path):
             length += 1
-            if length <= 75:
+            if length <= 150:
                 image_name = os.path.join(dir_folder_path, filename)
                 data = {
                         0: {

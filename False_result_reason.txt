@@ -24,14 +24,14 @@ Result of  day_man_001_41_7.mp4 is below:
 False
 刚开始黑屏，裁剪困难，检测到后座的手机
 
+#-------------------------------------
 Result of  day_man_001_10_1.mp4 is below:
 {'result': {'category': 0, 'duration': 23332}}
 False
 Result of  night_man_001_10_1.mp4 is below:
 {'result': {'category': 0, 'duration': 19738}}
 False
-Tracker精度不够/阈值不合理
-目前调整阈值 0.15->0.18，调整failure阈值为5，解决，可能伴随其他问题QAQ
+yijiejue  yongyanjingguanjiandianjiandejulijinxingpingpan(zhongdiandeguanjiandian)
 
 Result of  night_man_001_30_2.mp4 is below:
 {'result': {'category': 0, 'duration': 645}}
@@ -45,3 +45,44 @@ Result of  day_man_001_40_7.mp4 is below:
 {'result': {'category': 0, 'duration': 23514}}
 False
 已解决，图片分辨率问题，将图片resize成1920，1080解决night_man_001_40_1
+
+#--------------------------------------------------0610 0:00 update
+Result of  night_woman_005_11_1.mp4 is below:
+{'result': {'category': 4, 'duration': 5343}}
+False
+
+Result of  night_woman_005_30_3.mp4 is below:
+{'result': {'category': 4, 'duration': 6104}}
+False
+
+Result of  night_woman_005_31_1.mp4 is below:
+{'result': {'category': 4, 'duration': 5226}}
+False
+
+Result of  night_woman_005_41_7.mp4 is below:
+{'result': {'category': 4, 'duration': 4465}}
+False
+
+Result of  night_woman_005_31_4.mp4 is below:
+{'result': {'category': 4, 'duration': 6413}}
+False
+
+Result of  night_woman_005_30_2.mp4 is below:
+{'result': {'category': 4, 'duration': 4697}}
+False
+
+Result of  day_man_002_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 20609}}
+False
+
+Result of  night_woman_005_11_2.mp4 is below:
+{'result': {'category': 4, 'duration': 6062}}
+False
+
+Result of  day_man_001_40_6.mp4 is below:
+{'result': {'category': 1, 'duration': 5166}}
+False
+
+Result of  night_woman_005_41_6.mp4 is below:
+{'result': {'category': 4, 'duration': 5690}}
+False

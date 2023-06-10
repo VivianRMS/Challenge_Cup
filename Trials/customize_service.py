@@ -6,10 +6,15 @@ import os
 import numpy as np
 import time
 import cv2
+import re
+import json
 from input_reader import InputReader
 from tracker import Tracker
 from EAR import eye_aspect_ratio
 from MAR import mouth_aspect_ratio
+from MAR import mouth_upper_ratio
+from MAR import mouth_lower_ratio
+from scipy.spatial import distance as dist
 
 from models.experimental import attempt_load
 from utils1.general import check_img_size
@@ -42,12 +47,17 @@ class fatigue_driving_detection(PTServingBaseService):
         # lStart, lEnd) = (42, 48)
         self.lStart = 42
         self.lEnd = 48
+        self.lori = 67
         # (rStart, rEnd) = (36, 42)
         self.rStart = 36
         self.rEnd = 42
+        self.rori = 66
         # (mStart, mEnd) = (49, 66)
         self.mStart = 49
         self.mEnd = 66
+        # self.teststart = 0
+        # self.testend = 68
+
         self.EYE_AR_THRESH = 0.15
         self.MOUTH_AR_THRESH = 0.6
         self.frame_3s = self.fps * 3
@@ -89,7 +99,7 @@ class fatigue_driving_detection(PTServingBaseService):
                     except Exception:
                         return {"message": "There was an error loading the file"}
 
-                    self.capture = self.temp.name  # Pass temp.name to VideoCapture()
+                    # self.capture = self.temp.name  # Pass temp.name to VideoCapture()
                 except Exception:
                     return {"message": "There was an error processing the file"}
         return 'ok'
@@ -99,7 +109,6 @@ class fatigue_driving_detection(PTServingBaseService):
         model inference function
         Here are a inference example of resnet, if you use another model, please modify this function
         """
-        print(data)
         result = {"result": {"category": 0, "duration": 6000}}
 
         self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps)
@@ -116,7 +125,7 @@ class fatigue_driving_detection(PTServingBaseService):
         self.mouth_open_failure = 0
         self.use_phone_failure = 0
 
-        self.failure_threshold_normal = 4 #Reset to 0 when there are three failures! 
+        self.failure_threshold_normal = 5 #Reset to 0 when there are three failures! 
         self.failure_threshold_phone = 2 #Reset to 0 when there are three failures! 
 
         self.look_around_add_flag = False
@@ -127,7 +136,6 @@ class fatigue_driving_detection(PTServingBaseService):
         idx = 0
         while self.input_reader.is_open():
             self.look_around_add_flag = False # reset! 
-
             idx += 1
             
             if not self.input_reader.is_open() or self.need_reinit == 1:
@@ -147,36 +155,42 @@ class fatigue_driving_detection(PTServingBaseService):
             self.need_reinit = 0
 
             try:
-                #print("IDX: {}".format(idx))
                 if idx == 1:
                     bbox = detect(self.model, frame, self.stride, self.imgsz)
-                    #print(bbox)
                     choose_id = 0
                     now_id = 0
                     previous = 0
+                    flag = False
                     for box in bbox:
                         if box[0] == 0:
-                            #print(box[1])
                             if (box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2) > previous):
+                                flag = True
                                 previous = box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2)
                                 choose_id = now_id
                         now_id += 1
-                    self.cut_range = bbox[choose_id][1]
+                    if flag:
+                        self.cut_range = bbox[choose_id][1]
 
 
                 if frame is not None:
                     self.frame_num += 1
 
+                    # in case the image is not in the right size
+                    frame = cv2.resize(frame, (self.width, self.height))
                     # 剪裁主驾驶位
                     if self.cut_range == []:
-                        frame = frame[:, 600:1920, :]
+                        frame = frame[:, 700:1920, :]
                     else:
                         left_most = int((self.cut_range[0] - self.cut_range[2]/2) * (0.81) * 1920)
                         right_most = int((self.cut_range[0] + self.cut_range[2]/2) * (1.2) * 1920)
                         self.cut_picture_width = right_most - left_most
                         down_most = int((self.cut_range[1] - self.cut_range[3]/2) * (0.7) * 1920)
                         up_most = int((self.cut_range[1] + self.cut_range[3]/2) * (1.3) * 1920)
-                        frame = frame[:, left_most:right_most, :]
+                        if left_most > 550:
+                            
+                            frame = frame[:, left_most:right_most, :]
+                        else:
+                            frame = frame[:, 700:1920, :]
 
 
                     #whether_detect = False
@@ -194,19 +208,17 @@ class fatigue_driving_detection(PTServingBaseService):
                         f = faces[face_num]
                         f = copy.copy(f)
 
-
                         # 检测是否转头
-                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 55 or np.abs(self.standard_pose[1] - f.euler[1]) >= 55 or \
-                                np.abs(self.standard_pose[2] - f.euler[2]) >= 55:
+                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 60 or np.abs(self.standard_pose[1] - f.euler[1]) >= 60 or \
+                                np.abs(self.standard_pose[2] - f.euler[2]) >= 60:
                             self.look_around_frame += 1
                             self.look_around_failure = 0
                             self.look_around_add_flag = True
-                            #print(">>>>>-------Look around: {}".format(self.look_around_frame))
                             if self.look_around_frame >= self.frame_3s:
                                 result['result']['category'] = 4
                                 break
                             elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                                #print("RESET!!!")
+                                print("RESET!!!")
                                 self.mouth_open_frame = 0
                             #whether_detect = True
 
@@ -217,16 +229,68 @@ class fatigue_driving_detection(PTServingBaseService):
                         rightEye = f.lms[self.rStart:self.rEnd]
                         leftEAR = eye_aspect_ratio(leftEye)
                         rightEAR = eye_aspect_ratio(rightEye)
-                        # average the eye aspect ratio together for both eyes
-                        ear = (leftEAR + rightEAR) / 2.0
+                        # test = f.lms[self.teststart:self.testend]
+                        leftori = f.lms[self.lori]
+                        rightori = f.lms[self.rori]
+                        # print(rightori)
+                        # print(rightEye[1])
+                        # print(rightEye[5])
 
-                        if ear < self.EYE_AR_THRESH:
+                        leftLU = dist.euclidean(leftEye[1], leftori)
+                        # print(leftLU)
+                        leftLP = dist.euclidean(leftEye[5], leftori)
+                        # print(leftLP)
+                        if (leftLU > leftLP):
+                            leftL = (leftLU/leftLP)
+                        else:
+                            leftL = (leftLP/leftLU)
+
+                        leftRU = dist.euclidean(leftEye[2], leftori)
+                        leftRP = dist.euclidean(leftEye[4], leftori)
+                        if (leftRU > leftRP):
+                            leftR = (leftRU/leftRP)
+                        else:
+                            leftR = (leftRP/leftRU)
+
+                        rightLU = dist.euclidean(rightEye[1], rightori)
+                        rightLP = dist.euclidean(rightEye[5], rightori)
+                        if (rightLU > rightLP):
+                            rightL = (rightLU/rightLP)
+                        else:
+                            rightL = (rightLP/rightLU)
+
+                        rightRU = dist.euclidean(rightEye[2], rightori)
+                        rightRP = dist.euclidean(rightEye[4], rightori)
+                        if (rightRU > rightRP):
+                            rightR = (rightRU/rightRP)
+                        else:
+                            rightR = (rightRP/rightRU)
+
+                        num = 0
+                        if (leftL > 1.5): num=num+1
+                        if (leftR > 1.5): num=num+1
+                        if (rightL > 1.5): num=num+1
+                        if (rightR > 1.5): num=num+1
+                        # print(num)
+
+                        # overlap_one = ((rightori[2] < rightEye[1][2]) and (rightori[2] < rightEye[5][2]) )
+                        # # or (leftori[2] > leftEye[1][2]) or (leftori[2] > leftEye[5][2]))  
+                        # overlap_two = ((rightori[2] < rightEye[2][2]) or (rightori[2] < rightEye[4][2]) or (leftori[2] < leftEye[2][2]) or (leftori[2] < leftEye[4][2]))  
+                        # # average the eye aspect ratio together for both eyes
+                        
+                        ear = (leftEAR + rightEAR) / 2.0
+                        if (ear < self.EYE_AR_THRESH or ( ear < self.EYE_AR_THRESH + 0.05 and num >= 1) ):
                             self.eyes_closed_frame += 1
                             self.eyes_closed_failure = 0
-                            #print("-----------------Close eye: {}".format(self.eyes_closed_frame))
                             if self.eyes_closed_frame >= self.frame_3s:
                                 result['result']['category'] = 1
                                 break
+                        # elif (ear > self.EYE_AR_THRESH or overlap_one ) :
+                        #     self.eyes_closed_frame += 1
+                        #     self.eyes_closed_failure = 0
+                        #     if self.eyes_closed_frame >= self.frame_overlap:
+                        #         result['result']['category'] = 1
+                        #         break
                         elif self.eyes_closed_failure >= self.failure_threshold_normal:
                             self.eyes_closed_frame = 0
                         else: 
@@ -236,11 +300,12 @@ class fatigue_driving_detection(PTServingBaseService):
 
                         # 检测是否张嘴
                         mar = mouth_aspect_ratio(f.lms)
+                        mur = mouth_upper_ratio(f.lms)
+                        mlr = mouth_lower_ratio(f.lms)
 
-                        if mar > self.MOUTH_AR_THRESH:
+                        if mar > self.MOUTH_AR_THRESH and mur < 1 and mlr < 1:
                             self.mouth_open_frame += 1
                             self.mouth_open_failure = 0
-                            #print("OOOOO--------Mouth_open: {}".format(self.mouth_open_frame))
                             if self.mouth_open_frame >= self.frame_3s:
                                 result['result']['category'] = 2
                                 break
@@ -250,6 +315,19 @@ class fatigue_driving_detection(PTServingBaseService):
                             self.mouth_open_frame = 0
                         else:
                             self.mouth_open_failure += 1
+                        
+                        if mar > self.MOUTH_AR_THRESH and (mur >= 1 or mlr >= 1):
+                            self.look_around_frame += 1
+                            self.look_around_failure = 0
+                            self.look_around_add_flag = True
+                            if self.look_around_frame >= self.frame_3s:
+                                result['result']['category'] = 4
+                                break
+                            elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                print("RESET!!!")
+                                self.mouth_open_frame = 0
+                            #whether_detect = True
+                            
                             #whether_detect = True
 #                         print(mar)
 
@@ -258,13 +336,12 @@ class fatigue_driving_detection(PTServingBaseService):
                         self.look_around_frame += 1
                         self.look_around_failure = 0
                         self.look_around_add_flag = True
-                        #print(">>>>>>>>---------Look around: {}".format(self.look_around_frame))
                         if self.look_around_frame >= self.frame_3s:
                             result['result']['category'] = 4
                             break
                         elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
                             self.mouth_open_frame = 0
-                            #print("RESET!!!")
+                            print("RESET!!!")
                         # ???
 
 
@@ -287,12 +364,11 @@ class fatigue_driving_detection(PTServingBaseService):
                                 self.use_phone_frame += 1
                                 self.use_phone_failure = 0
                                 self.use_phone_flag = True
-                                #print("PPPPPPPPPP--------------Use Phone: {}".format(self.use_phone_frame))
                                 break
                         
-                        if self.use_phone_frame >= self.frame_3s/6 and self.look_around_frame >= self.frame_3s/3: 
+                        if self.use_phone_frame >= self.frame_3s/6 - 3 and self.look_around_frame >= self.frame_3s/3: 
                             self.look_around_frame = 0
-                            #print("RESET!")
+                            print("RESET!")
                 
                         if self.use_phone_failure >= self.failure_threshold_phone: 
                             self.use_phone_frame = 0
@@ -308,6 +384,7 @@ class fatigue_driving_detection(PTServingBaseService):
                     result['result']['category'] = 0
 
                     self.failures = 0
+
 
                 else:
                     break
