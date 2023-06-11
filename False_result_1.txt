@@ -1,0 +1,51 @@
+Result of  night_woman_005_30_3.mp4 is below:
+{'result': {'category': 0, 'duration': 19347}}
+False
+Result of  night_woman_005_31_4.mp4 is below:
+{'result': {'category': 1, 'duration': 13178}}
+False
+Result of  day_man_002_30_2.mp4 is below:
+{'result': {'category': 1, 'duration': 17742}}
+False
+Result of  day_man_001_40_6.mp4 is below:
+{'result': {'category': 1, 'duration': 4192}}
+False
+Result of  day_man_002_40_7.mp4 is below:
+{'result': {'category': 1, 'duration': 7026}}
+False
+Result of  day_man_001_40_5.mp4 is below:
+{'result': {'category': 0, 'duration': 18559}}
+False
+Result of  night_man_002_40_2.mp4 is below:
+{'result': {'category': 0, 'duration': 15929}}
+False
+Result of  night_woman_005_40_2.mp4 is below:
+{'result': {'category': 0, 'duration': 19875}}
+False
+Result of  day_man_001_40_7.mp4 is below:
+{'result': {'category': 0, 'duration': 18484}}
+False
+Result of  day_man_001_40_2.mp4 is below:
+{'result': {'category': 1, 'duration': 6158}}
+False
+Result of  day_man_001_41_7.mp4 is below:
+{'result': {'category': 3, 'duration': 5847}}
+False
+Result of  night_man_001_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 435}}
+False
+Result of  night_man_002_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 19460}}
+False
+Result of  night_man_002_40_1.mp4 is below:
+{'result': {'category': 0, 'duration': 14881}}
+False
+Result of  day_man_002_40_6.mp4 is below:
+{'result': {'category': 0, 'duration': 18843}}
+False
+Result of  day_man_001_30_2.mp4 is below:
+{'result': {'category': 0, 'duration': 19851}}
+False
+Result of  day_man_002_10_2.mp4 is below:
+{'result': {'category': 0, 'duration': 17214}}
+False

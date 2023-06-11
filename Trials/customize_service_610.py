@@ -21,11 +21,10 @@ from utils1.general import check_img_size
 from tempfile import NamedTemporaryFile
 from utils1.torch_utils import TracedModel
 from detect import detect
-#from model_service.pytorch_model_service import PTServingBaseService
+from model_service.pytorch_model_service import PTServingBaseService
 
 
-#class fatigue_driving_detection(PTServingBaseService):
-class fatigue_driving_detection():
+class fatigue_driving_detection(PTServingBaseService):
     def __init__(self, model_name, model_path):
         # these three parameters are no need to modify
         self.model_name = model_name
@@ -110,6 +109,8 @@ class fatigue_driving_detection():
         model inference function
         Here are a inference example of resnet, if you use another model, please modify this function
         """
+        visualize = False
+
         if visualize: 
             print(data)
         result = {"result": {"category": 0, "duration": 6000}}
@@ -219,6 +220,8 @@ class fatigue_driving_detection():
 
                         # for visualization of face counter points 
                         if visualize:
+                            print(self.standard_pose)
+                            print(f.euler)
                             for pt in f.lms:
                                 cv2.circle(
                                     frame,
@@ -228,8 +231,8 @@ class fatigue_driving_detection():
                                     1)
 
                         # 检测是否转头
-                        if np.abs(self.standard_pose[0] - np.abs(f.euler[0])) >= 60 or np.abs(self.standard_pose[1] - np.abs(f.euler[1])) >= 60 or \
-                                np.abs(self.standard_pose[2] - np.abs(f.euler[2])) >= 60:
+                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 60 or np.abs(self.standard_pose[1] - f.euler[1]) >= 60 or \
+                                np.abs(self.standard_pose[2] - f.euler[2]) >= 60:
                             self.look_around_frame += 1
                             self.look_around_failure = 0
                             self.look_around_add_flag = True
@@ -455,110 +458,3 @@ class fatigue_driving_detection():
     def _postprocess(self, data):
         os.remove(self.capture)
         return data
-
-
-if __name__ == "__main__":
-
-    mode = "Examine"
-
-    if mode == "Examine":
-        # Set if you want to visualize the image
-        visualize = True
-
-        # First set the location of the model
-        folder_name = "/fatigue_driver/"
-        detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
-
-        # Second set the location of the video
-        file_name = folder_name+"Fatigue_driving_detection_video/night_woman_005_11_1.mp4"
-        
-        # data is not used acuatly
-        data = {
-            0: {
-                file_name : file_name
-            }
-        }
-
-        # pass the file_name directly to the capture variable to read
-        detector.capture = file_name
-        result = detector._inference(data)
-
-        print("Result of ", file_name, "is below:")
-        print(result)
-    
-    else: 
-        visualize = False
-        dir_folder_path = "Fatigue_driving_detection_video"
-
-        # First set the location of the model
-        folder_name = "/fatigue_driver/"
-        detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
-
-        all_false_file = []
-        length = 0
-
-        for filename in os.listdir(dir_folder_path):
-            length += 1
-            if length <= 150:
-                image_name = os.path.join(dir_folder_path, filename)
-                data = {
-                        0: {
-                            image_name : image_name
-                            }
-                        }
-
-                # pass the file_name directly to the capture variable to read
-                detector.capture = image_name
-                result = detector._inference(data)
-
-                print("Result of ", filename, "is below:")
-                print(result)
-                
-                patternstr = r"_\d{2}_"
-                match = re.search(patternstr, filename)
-                predict_result = []
-                true_result = []
-
-                if match:
-                    matchstr = match.group()
-                    predict_result.append(result["result"]["category"])
-
-                    if matchstr[2] == "1" or matchstr[1:3] == "00":
-                        true_result.append(0)
-                        print(result["result"]["category"] ==  0)
-                        if not(result["result"]["category"] ==  0):
-                            all_false_file.append(filename)
-                    else:
-                        true_result.append(int(matchstr[1]))
-                        print(result["result"]["category"] == int(matchstr[1]))
-                        if not(result["result"]["category"] ==  int(matchstr[1])):
-                            all_false_file.append(filename)
-        
-        with open("result1.txt", "w") as file:
-            file.write("All video numbers: {}\n".format(length))
-            file.write("False video numbers: {}\n".format(len(all_false_file)))
-            for item in all_false_file:
-                file.write(item + "\n")
-
-            # Calculate F1 score
-            file.write("----------------F1 score----------------\n")
-
-            predict_result = np.array(predict_result)
-            true_result = np.array(true_result)
-            categories = [0, 1, 2, 3, 4]
-            F1_score_each = []
-            for category in categories:
-                TP = np.sum((predict_result == true_result) == (predict_result == category))
-                FP = np.sum((predict_result != true_result) == (predict_result == category))
-                FN = np.sum((predict_result == true_result) == (true_result == category))
-                Precision = float(TP) / (TP + FP)
-                Recall = float(TP) / (TP + FN)
-                F1_score_temp = 2*Precision*Recall/(Precision + Recall)
-                F1_score_each.append(F1_score_temp)
-                file.write("For categories {}, the F1-score is {}\n".format(category, F1_score_temp))
-            F1_score_each.fillna(0)
-            F1_score = sum(F1_score_each) / 5.0
-            file.write("The average F1_score is \n")
-            file.write(str(F1_score) + "\n")
-
-

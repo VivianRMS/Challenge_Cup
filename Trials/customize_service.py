@@ -60,7 +60,7 @@ class fatigue_driving_detection(PTServingBaseService):
 
         self.EYE_AR_THRESH = 0.15
         self.MOUTH_AR_THRESH = 0.6
-        self.frame_3s = self.fps * 3
+        self.frame_3s = self.fps * 3 / 2
         self.face_detect = 0
 
         self.weights = "best.pt"
@@ -125,7 +125,7 @@ class fatigue_driving_detection(PTServingBaseService):
         self.mouth_open_failure = 0
         self.use_phone_failure = 0
 
-        self.failure_threshold_normal = 5 #Reset to 0 when there are three failures! 
+        self.failure_threshold_normal = 4 #Reset to 0 when there are three failures! 
         self.failure_threshold_phone = 2 #Reset to 0 when there are three failures! 
 
         self.look_around_add_flag = False
@@ -133,8 +133,11 @@ class fatigue_driving_detection(PTServingBaseService):
         self.cut_range = []
         self.cut_picture_width = 0
 
+        visualize = False
+
         idx = 0
         while self.input_reader.is_open():
+
             self.look_around_add_flag = False # reset! 
             idx += 1
             
@@ -155,14 +158,17 @@ class fatigue_driving_detection(PTServingBaseService):
             self.need_reinit = 0
 
             try:
+                #print("IDX: {}".format(idx))
                 if idx == 1:
                     bbox = detect(self.model, frame, self.stride, self.imgsz)
+                    #print(bbox)
                     choose_id = 0
                     now_id = 0
                     previous = 0
                     flag = False
                     for box in bbox:
                         if box[0] == 0:
+                            #print(box[1])
                             if (box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2) > previous):
                                 flag = True
                                 previous = box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2)
@@ -174,183 +180,183 @@ class fatigue_driving_detection(PTServingBaseService):
 
                 if frame is not None:
                     self.frame_num += 1
-
-                    # in case the image is not in the right size
+                    
+            
+                        # in case the image is not in the right size
                     frame = cv2.resize(frame, (self.width, self.height))
-                    # 剪裁主驾驶位
+                        # 剪裁主驾驶位
                     if self.cut_range == []:
                         frame = frame[:, 700:1920, :]
                     else:
                         left_most = int((self.cut_range[0] - self.cut_range[2]/2) * (0.81) * 1920)
                         right_most = int((self.cut_range[0] + self.cut_range[2]/2) * (1.2) * 1920)
                         self.cut_picture_width = right_most - left_most
-                        down_most = int((self.cut_range[1] - self.cut_range[3]/2) * (0.7) * 1920)
-                        up_most = int((self.cut_range[1] + self.cut_range[3]/2) * (1.3) * 1920)
+                        down_most = int((self.cut_range[1] - self.cut_range[3]/2) * (0.7) * 1080)
+                        up_most = int((self.cut_range[1] + self.cut_range[3]/2) * (1.3) * 1080)
                         if left_most > 550:
-                            
+                                
                             frame = frame[:, left_most:right_most, :]
                         else:
                             frame = frame[:, 700:1920, :]
 
 
                     #whether_detect = False
-                    
-                    faces = self.tracker.predict(frame)
-                    if len(faces) > 0:
 
-                        face_num = 0
-                        max_x = 0
-                        for face_num_index, f in enumerate(faces):
-                            if max_x <= f.bbox[3]:
-                                face_num = face_num_index
-                                max_x = f.bbox[3]
+                    if self.frame_num % 2 == 1: 
+                        faces = self.tracker.predict(frame)
+                        if len(faces) > 0:
 
-                        f = faces[face_num]
-                        f = copy.copy(f)
+                            face_num = 0
+                            max_x = 0
+                            for face_num_index, f in enumerate(faces):
+                                if max_x <= f.bbox[3]:
+                                    face_num = face_num_index
+                                    max_x = f.bbox[3]
 
-                        # 检测是否转头
-                        if np.abs(self.standard_pose[0] - f.euler[0]) >= 60 or np.abs(self.standard_pose[1] - f.euler[1]) >= 60 or \
-                                np.abs(self.standard_pose[2] - f.euler[2]) >= 60:
-                            self.look_around_frame += 1
-                            self.look_around_failure = 0
-                            self.look_around_add_flag = True
-                            if self.look_around_frame >= self.frame_3s:
-                                result['result']['category'] = 4
-                                break
-                            elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                                print("RESET!!!")
-                                self.mouth_open_frame = 0
-                            #whether_detect = True
+                            f = faces[face_num]
+                            f = copy.copy(f)
 
-                        # 检测是否闭眼
-                        # extract the left and right eye coordinates, then use the
-                        # coordinates to compute the eye aspect ratio for both eyes
-                        leftEye = f.lms[self.lStart:self.lEnd]
-                        rightEye = f.lms[self.rStart:self.rEnd]
-                        leftEAR = eye_aspect_ratio(leftEye)
-                        rightEAR = eye_aspect_ratio(rightEye)
-                        # test = f.lms[self.teststart:self.testend]
-                        leftori = f.lms[self.lori]
-                        rightori = f.lms[self.rori]
-                        # print(rightori)
-                        # print(rightEye[1])
-                        # print(rightEye[5])
+                            # 检测是否转头
+                            if np.abs(self.standard_pose[0] - np.abs(f.euler[0])) >= 60 or np.abs(self.standard_pose[1] - np.abs(f.euler[1])) >= 60 or \
+                                    np.abs(self.standard_pose[2] - np.abs(f.euler[2])) >= 60:
+                                self.look_around_frame += 1
+                                self.look_around_failure = 0
+                                self.look_around_add_flag = True
+                                if self.look_around_frame >= self.frame_3s:
+                                    result['result']['category'] = 4
+                                    break
+                                elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                    print("RESET!!!")
+                                    self.mouth_open_frame = 0
+                                #whether_detect = True
 
-                        leftLU = dist.euclidean(leftEye[1], leftori)
-                        # print(leftLU)
-                        leftLP = dist.euclidean(leftEye[5], leftori)
-                        # print(leftLP)
-                        if (leftLU > leftLP):
-                            leftL = (leftLU/leftLP)
-                        else:
-                            leftL = (leftLP/leftLU)
+                            # 检测是否闭眼
+                            # extract the left and right eye coordinates, then use the
+                            # coordinates to compute the eye aspect ratio for both eyes
+                            leftEye = f.lms[self.lStart:self.lEnd]
+                            rightEye = f.lms[self.rStart:self.rEnd]
+                            leftEAR = eye_aspect_ratio(leftEye)
+                            rightEAR = eye_aspect_ratio(rightEye)
+                            # test = f.lms[self.teststart:self.testend]
+                            leftori = f.lms[self.lori]
+                            rightori = f.lms[self.rori]
+                            # print(rightori)
+                            # print(rightEye[1])
+                            # print(rightEye[5])
 
-                        leftRU = dist.euclidean(leftEye[2], leftori)
-                        leftRP = dist.euclidean(leftEye[4], leftori)
-                        if (leftRU > leftRP):
-                            leftR = (leftRU/leftRP)
-                        else:
-                            leftR = (leftRP/leftRU)
+                            leftLU = dist.euclidean(leftEye[1], leftori)
+                            # print(leftLU)
+                            leftLP = dist.euclidean(leftEye[5], leftori)
+                            # print(leftLP)
+                            if (leftLU > leftLP):
+                                leftL = (leftLU/leftLP)
+                            else:
+                                leftL = (leftLP/leftLU)
 
-                        rightLU = dist.euclidean(rightEye[1], rightori)
-                        rightLP = dist.euclidean(rightEye[5], rightori)
-                        if (rightLU > rightLP):
-                            rightL = (rightLU/rightLP)
-                        else:
-                            rightL = (rightLP/rightLU)
+                            leftRU = dist.euclidean(leftEye[2], leftori)
+                            leftRP = dist.euclidean(leftEye[4], leftori)
+                            if (leftRU > leftRP):
+                                leftR = (leftRU/leftRP)
+                            else:
+                                leftR = (leftRP/leftRU)
 
-                        rightRU = dist.euclidean(rightEye[2], rightori)
-                        rightRP = dist.euclidean(rightEye[4], rightori)
-                        if (rightRU > rightRP):
-                            rightR = (rightRU/rightRP)
-                        else:
-                            rightR = (rightRP/rightRU)
+                            rightLU = dist.euclidean(rightEye[1], rightori)
+                            rightLP = dist.euclidean(rightEye[5], rightori)
+                            if (rightLU > rightLP):
+                                rightL = (rightLU/rightLP)
+                            else:
+                                rightL = (rightLP/rightLU)
 
-                        num = 0
-                        if (leftL > 1.5): num=num+1
-                        if (leftR > 1.5): num=num+1
-                        if (rightL > 1.5): num=num+1
-                        if (rightR > 1.5): num=num+1
-                        # print(num)
+                            rightRU = dist.euclidean(rightEye[2], rightori)
+                            rightRP = dist.euclidean(rightEye[4], rightori)
+                            if (rightRU > rightRP):
+                                rightR = (rightRU/rightRP)
+                            else:
+                                rightR = (rightRP/rightRU)
 
-                        # overlap_one = ((rightori[2] < rightEye[1][2]) and (rightori[2] < rightEye[5][2]) )
-                        # # or (leftori[2] > leftEye[1][2]) or (leftori[2] > leftEye[5][2]))  
-                        # overlap_two = ((rightori[2] < rightEye[2][2]) or (rightori[2] < rightEye[4][2]) or (leftori[2] < leftEye[2][2]) or (leftori[2] < leftEye[4][2]))  
-                        # # average the eye aspect ratio together for both eyes
-                        
-                        ear = (leftEAR + rightEAR) / 2.0
-                        if (ear < self.EYE_AR_THRESH or ( ear < self.EYE_AR_THRESH + 0.05 and num >= 1) ):
-                            self.eyes_closed_frame += 1
-                            self.eyes_closed_failure = 0
-                            if self.eyes_closed_frame >= self.frame_3s:
-                                result['result']['category'] = 1
-                                break
-                        # elif (ear > self.EYE_AR_THRESH or overlap_one ) :
-                        #     self.eyes_closed_frame += 1
-                        #     self.eyes_closed_failure = 0
-                        #     if self.eyes_closed_frame >= self.frame_overlap:
-                        #         result['result']['category'] = 1
-                        #         break
-                        elif self.eyes_closed_failure >= self.failure_threshold_normal:
-                            self.eyes_closed_frame = 0
-                        else: 
-                            self.eyes_closed_failure += 1
-                            #whether_detect = True
-                        # print(ear, eyes_closed_frame)
+                            num = 0
+                            if (leftL > 1.5): num=num+1
+                            if (leftR > 1.5): num=num+1
+                            if (rightL > 1.5): num=num+1
+                            if (rightR > 1.5): num=num+1
+                            # print(num)
 
-                        # 检测是否张嘴
-                        mar = mouth_aspect_ratio(f.lms)
-                        mur = mouth_upper_ratio(f.lms)
-                        mlr = mouth_lower_ratio(f.lms)
-
-                        if mar > self.MOUTH_AR_THRESH and mur < 1 and mlr < 1:
-                            self.mouth_open_frame += 1
-                            self.mouth_open_failure = 0
-                            if self.mouth_open_frame >= self.frame_3s:
-                                result['result']['category'] = 2
-                                break
-                            elif self.mouth_open_frame >= self.frame_3s/2: 
-                                self.eyes_closed_frame = 0
-                        elif self.mouth_open_failure >= self.failure_threshold_normal:
-                            self.mouth_open_frame = 0
-                        else:
-                            self.mouth_open_failure += 1
-                        
-                        if mar > self.MOUTH_AR_THRESH and (mur >= 1 or mlr >= 1):
-                            self.look_around_frame += 1
-                            self.look_around_failure = 0
-                            self.look_around_add_flag = True
-                            if self.look_around_frame >= self.frame_3s:
-                                result['result']['category'] = 4
-                                break
-                            elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                                print("RESET!!!")
-                                self.mouth_open_frame = 0
-                            #whether_detect = True
+                            # overlap_one = ((rightori[2] < rightEye[1][2]) and (rightori[2] < rightEye[5][2]) )
+                            # # or (leftori[2] > leftEye[1][2]) or (leftori[2] > leftEye[5][2]))  
+                            # overlap_two = ((rightori[2] < rightEye[2][2]) or (rightori[2] < rightEye[4][2]) or (leftori[2] < leftEye[2][2]) or (leftori[2] < leftEye[4][2]))  
+                            # # average the eye aspect ratio together for both eyes
                             
-                            #whether_detect = True
-#                         print(mar)
+                            ear = (leftEAR + rightEAR) / 2.0
+                            if (ear < self.EYE_AR_THRESH or ( ear < self.EYE_AR_THRESH + 0.05 and num >= 1) ):
+                                self.eyes_closed_frame += 1
+                                self.eyes_closed_failure = 0
+                                if self.eyes_closed_frame >= self.frame_3s:
+                                    result['result']['category'] = 1
+                                    break
+                            # elif (ear > self.EYE_AR_THRESH or overlap_one ) :
+                            #     self.eyes_closed_frame += 1
+                            #     self.eyes_closed_failure = 0
+                            #     if self.eyes_closed_frame >= self.frame_overlap:
+                            #         result['result']['category'] = 1
+                            #         break
+                            elif self.eyes_closed_failure >= self.failure_threshold_normal:
+                                self.eyes_closed_frame = 0
+                            else: 
+                                self.eyes_closed_failure += 1
+                                #whether_detect = True
+                            # print(ear, eyes_closed_frame)
 
-#                         print(len(f.lms), f.euler)
-                    else:
-                        self.look_around_frame += 1
-                        self.look_around_failure = 0
-                        self.look_around_add_flag = True
-                        if self.look_around_frame >= self.frame_3s:
-                            result['result']['category'] = 4
-                            break
-                        elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                            self.mouth_open_frame = 0
-                            print("RESET!!!")
-                        # ???
+                            # 检测是否张嘴
+                            mar = mouth_aspect_ratio(f.lms)
+                            mur = mouth_upper_ratio(f.lms)
+                            mlr = mouth_lower_ratio(f.lms)
+
+                            if mar > self.MOUTH_AR_THRESH and mur < 1 and mlr < 1:
+                                self.mouth_open_frame += 1
+                                self.mouth_open_failure = 0
+                                if self.mouth_open_frame >= self.frame_3s:
+                                    result['result']['category'] = 2
+                                    break
+                                elif self.mouth_open_frame >= self.frame_3s/2: 
+                                    self.eyes_closed_frame = 0
+                            elif self.mouth_open_failure >= self.failure_threshold_normal:
+                                self.mouth_open_frame = 0
+                            else:
+                                self.mouth_open_failure += 1
+                            
+                            if mar > self.MOUTH_AR_THRESH and (mur >= 1 or mlr >= 1):
+                                self.look_around_frame += 1
+                                self.look_around_failure = 0
+                                self.look_around_add_flag = True
+                                if self.look_around_frame >= self.frame_3s:
+                                    result['result']['category'] = 4
+                                    break
+                                elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                    self.mouth_open_frame = 0
+                                #whether_detect = True
+                                
+                                #whether_detect = True
+    #                         print(mar)
+
+    #                         print(len(f.lms), f.euler)
+                        else:
+                            self.look_around_frame += 1
+                            self.look_around_failure = 0
+                            self.look_around_add_flag = True
+                            if self.look_around_frame >= self.frame_3s:
+                                result['result']['category'] = 4
+                                break
+                            elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                self.mouth_open_frame = 0
+                            # ???
 
 
-                    if self.look_around_add_flag == False: 
-                        self.look_around_failure += 1
-                    if self.look_around_failure >= self.failure_threshold_normal: 
-                        self.look_around_frame = 0
+                        if self.look_around_add_flag == False: 
+                            self.look_around_failure += 1
+                        if self.look_around_failure >= self.failure_threshold_normal: 
+                            self.look_around_frame = 0
 
-                        # 检测驾驶员是否接打电话 以及低头的人脸
+                            # 检测驾驶员是否接打电话 以及低头的人脸
 
                     if self.frame_num % 3 == 1:                    
                         bbox = detect(self.model, frame, self.stride, self.imgsz)
@@ -366,9 +372,8 @@ class fatigue_driving_detection(PTServingBaseService):
                                 self.use_phone_flag = True
                                 break
                         
-                        if self.use_phone_frame >= self.frame_3s/6 - 3 and self.look_around_frame >= self.frame_3s/3: 
+                        if self.use_phone_frame >= self.frame_3s * 2 /6 - 3 and self.look_around_frame >= self.frame_3s/2: 
                             self.look_around_frame = 0
-                            print("RESET!")
                 
                         if self.use_phone_failure >= self.failure_threshold_phone: 
                             self.use_phone_frame = 0
@@ -376,7 +381,7 @@ class fatigue_driving_detection(PTServingBaseService):
                             self.use_phone_failure += 1
                         
                             
-                    if self.use_phone_frame >= (self.frame_3s/3)-2:
+                    if self.use_phone_frame >= (self.frame_3s * 2/3) - 2:
                         result['result']['category'] = 3
                         break
 

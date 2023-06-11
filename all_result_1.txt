@@ -1,379 +1,376 @@
 Result of  day_woman_007_31_1.mp4 is below:
-{'result': {'category': 0, 'duration': 19578}}
+{'result': {'category': 0, 'duration': 16920}}
 True
 Result of  night_woman_005_11_1.mp4 is below:
-{'result': {'category': 4, 'duration': 5343}}
-False
+{'result': {'category': 0, 'duration': 16887}}
+True
 Result of  day_man_001_20_1.mp4 is below:
-{'result': {'category': 2, 'duration': 5939}}
+{'result': {'category': 2, 'duration': 4911}}
 True
 Result of  day_man_002_00_2.mp4 is below:
-{'result': {'category': 0, 'duration': 21326}}
+{'result': {'category': 0, 'duration': 17175}}
 True
 Result of  night_woman_005_30_3.mp4 is below:
-{'result': {'category': 4, 'duration': 6104}}
+{'result': {'category': 0, 'duration': 19347}}
 False
 Result of  night_man_001_41_1.mp4 is below:
-{'result': {'category': 0, 'duration': 19154}}
+{'result': {'category': 0, 'duration': 17494}}
 True
 Result of  night_woman_005_31_1.mp4 is below:
-{'result': {'category': 4, 'duration': 5226}}
-False
+{'result': {'category': 0, 'duration': 15365}}
+True
 Result of  day_woman_007_41_3.mp4 is below:
-{'result': {'category': 0, 'duration': 17025}}
+{'result': {'category': 0, 'duration': 15795}}
 True
 Result of  night_woman_005_41_7.mp4 is below:
-{'result': {'category': 4, 'duration': 4465}}
-False
+{'result': {'category': 0, 'duration': 16873}}
+True
 Result of  night_man_002_21_1.mp4 is below:
-{'result': {'category': 0, 'duration': 20408}}
+{'result': {'category': 0, 'duration': 17733}}
 True
 Result of  night_man_002_30_3.mp4 is below:
-{'result': {'category': 3, 'duration': 8943}}
+{'result': {'category': 3, 'duration': 7331}}
 True
 Result of  day_man_002_40_4.mp4 is below:
-{'result': {'category': 4, 'duration': 5725}}
+{'result': {'category': 4, 'duration': 6375}}
 True
 Result of  day_man_001_41_4.mp4 is below:
-{'result': {'category': 0, 'duration': 18367}}
+{'result': {'category': 0, 'duration': 17565}}
 True
 Result of  night_man_001_40_1.mp4 is below:
-{'result': {'category': 4, 'duration': 12432}}
+{'result': {'category': 4, 'duration': 7345}}
 True
 Result of  day_man_002_41_5.mp4 is below:
-{'result': {'category': 0, 'duration': 24182}}
+{'result': {'category': 0, 'duration': 21693}}
 True
 Result of  day_man_001_30_3.mp4 is below:
-{'result': {'category': 3, 'duration': 10812}}
+{'result': {'category': 3, 'duration': 10447}}
 True
 Result of  day_man_001_10_2.mp4 is below:
-{'result': {'category': 1, 'duration': 11015}}
+{'result': {'category': 1, 'duration': 7793}}
 True
 Result of  night_man_002_10_2.mp4 is below:
-{'result': {'category': 1, 'duration': 5058}}
+{'result': {'category': 1, 'duration': 4919}}
 True
 Result of  night_man_002_31_3.mp4 is below:
-{'result': {'category': 0, 'duration': 15034}}
+{'result': {'category': 0, 'duration': 13759}}
 True
 Result of  day_woman_007_40_1.mp4 is below:
-{'result': {'category': 4, 'duration': 7083}}
+{'result': {'category': 4, 'duration': 6011}}
 True
 Result of  night_woman_005_31_4.mp4 is below:
-{'result': {'category': 4, 'duration': 6413}}
+{'result': {'category': 1, 'duration': 13178}}
 False
 Result of  night_man_001_40_4.mp4 is below:
-{'result': {'category': 4, 'duration': 4536}}
+{'result': {'category': 4, 'duration': 3863}}
 True
 Result of  day_man_001_00_2.mp4 is below:
-{'result': {'category': 0, 'duration': 15948}}
+{'result': {'category': 0, 'duration': 13300}}
 True
 Result of  day_woman_007_00_1.mp4 is below:
-{'result': {'category': 0, 'duration': 17245}}
+{'result': {'category': 0, 'duration': 15924}}
 True
 Result of  day_man_002_30_1.mp4 is below:
-{'result': {'category': 3, 'duration': 8239}}
+{'result': {'category': 3, 'duration': 7797}}
 True
 Result of  night_woman_005_30_2.mp4 is below:
-{'result': {'category': 4, 'duration': 4697}}
-False
+{'result': {'category': 3, 'duration': 7443}}
+True
 Result of  night_man_002_00_2.mp4 is below:
-{'result': {'category': 0, 'duration': 20170}}
+{'result': {'category': 0, 'duration': 17762}}
 True
 Result of  day_woman_007_30_1.mp4 is below:
-{'result': {'category': 3, 'duration': 9756}}
+{'result': {'category': 3, 'duration': 8830}}
 True
 Result of  night_man_001_31_1.mp4 is below:
-{'result': {'category': 0, 'duration': 11319}}
+{'result': {'category': 0, 'duration': 11584}}
 True
 Result of  night_man_002_41_1.mp4 is below:
-{'result': {'category': 0, 'duration': 20711}}
+{'result': {'category': 0, 'duration': 21045}}
 True
 Result of  day_woman_007_21_1.mp4 is below:
-{'result': {'category': 0, 'duration': 16851}}
+{'result': {'category': 0, 'duration': 14162}}
 True
 Result of  day_man_001_20_2.mp4 is below:
-{'result': {'category': 2, 'duration': 10069}}
+{'result': {'category': 2, 'duration': 8529}}
 True
 Result of  day_man_002_30_2.mp4 is below:
-{'result': {'category': 0, 'duration': 20609}}
+{'result': {'category': 1, 'duration': 17742}}
 False
 Result of  night_man_002_11_1.mp4 is below:
-{'result': {'category': 0, 'duration': 18423}}
+{'result': {'category': 0, 'duration': 15791}}
 True
 Result of  day_woman_007_40_2.mp4 is below:
-{'result': {'category': 4, 'duration': 8668}}
+{'result': {'category': 4, 'duration': 8514}}
 True
 Result of  day_man_001_41_3.mp4 is below:
-{'result': {'category': 0, 'duration': 20869}}
+{'result': {'category': 0, 'duration': 17675}}
 True
 Result of  night_woman_005_11_2.mp4 is below:
-{'result': {'category': 4, 'duration': 6062}}
-False
+{'result': {'category': 0, 'duration': 18432}}
+True
 Result of  night_woman_005_40_4.mp4 is below:
-{'result': {'category': 4, 'duration': 4489}}
+{'result': {'category': 4, 'duration': 4118}}
 True
 Result of  day_man_001_40_6.mp4 is below:
-{'result': {'category': 1, 'duration': 5166}}
+{'result': {'category': 1, 'duration': 4192}}
 False
 Result of  day_man_002_40_7.mp4 is below:
-{'result': {'category': 4, 'duration': 7203}}
-True
+{'result': {'category': 1, 'duration': 7026}}
+False
 Result of  night_man_002_31_2.mp4 is below:
-{'result': {'category': 0, 'duration': 20592}}
+{'result': {'category': 0, 'duration': 16978}}
 True
 Result of  night_man_002_10_1.mp4 is below:
-{'result': {'category': 1, 'duration': 6866}}
+{'result': {'category': 1, 'duration': 5068}}
 True
 Result of  night_woman_005_41_6.mp4 is below:
-{'result': {'category': 4, 'duration': 5690}}
-False
+{'result': {'category': 0, 'duration': 16346}}
+True
 Result of  day_woman_007_30_2.mp4 is below:
-{'result': {'category': 3, 'duration': 12374}}
+{'result': {'category': 3, 'duration': 8945}}
 True
 Result of  day_man_002_41_1.mp4 is below:
-{'result': {'category': 0, 'duration': 18626}}
+{'result': {'category': 0, 'duration': 17234}}
 True
 Result of  night_woman_005_10_2.mp4 is below:
-{'result': {'category': 4, 'duration': 5350}}
-False
+{'result': {'category': 1, 'duration': 5146}}
+True
 Result of  day_man_001_40_5.mp4 is below:
-{'result': {'category': 4, 'duration': 6210}}
-True
+{'result': {'category': 0, 'duration': 18559}}
+False
 Result of  day_man_001_30_1.mp4 is below:
-{'result': {'category': 3, 'duration': 7158}}
+{'result': {'category': 3, 'duration': 8583}}
 True
-Result of  night_woman_005_41_6.mp4 is below:
-{'result': {'category': 4, 'duration': 5690}}
-FalseResult of  night_man_002_11_2.mp4 is below:
-{'result': {'category': 0, 'duration': 19078}}
+Result of  night_man_002_11_2.mp4 is below:
+{'result': {'category': 0, 'duration': 20447}}
 True
 Result of  night_man_002_41_3.mp4 is below:
-{'result': {'category': 0, 'duration': 16109}}
+{'result': {'category': 0, 'duration': 17124}}
 True
 Result of  night_woman_005_40_1.mp4 is below:
-{'result': {'category': 4, 'duration': 2190}}
+{'result': {'category': 4, 'duration': 3931}}
 True
 Result of  night_woman_005_10_1.mp4 is below:
-{'result': {'category': 4, 'duration': 4784}}
-False
+{'result': {'category': 1, 'duration': 4061}}
+True
 Result of  night_man_002_30_4.mp4 is below:
-{'result': {'category': 3, 'duration': 5074}}
+{'result': {'category': 3, 'duration': 4322}}
 True
 Result of  day_man_001_41_1.mp4 is below:
-{'result': {'category': 0, 'duration': 18594}}
+{'result': {'category': 0, 'duration': 17402}}
 True
 Result of  day_man_002_40_8.mp4 is below:
-{'result': {'category': 4, 'duration': 3841}}
+{'result': {'category': 4, 'duration': 4157}}
 True
 Result of  night_man_002_40_2.mp4 is below:
-{'result': {'category': 4, 'duration': 5154}}
-True
+{'result': {'category': 0, 'duration': 15929}}
+False
 Result of  night_man_002_40_6.mp4 is below:
-{'result': {'category': 4, 'duration': 5643}}
+{'result': {'category': 4, 'duration': 5486}}
 True
 Result of  night_woman_005_20_2.mp4 is below:
-{'result': {'category': 2, 'duration': 6732}}
+{'result': {'category': 2, 'duration': 6340}}
 True
 Result of  day_man_002_31_2.mp4 is below:
-{'result': {'category': 4, 'duration': 5825}}
-False
+{'result': {'category': 0, 'duration': 19462}}
+True
 Result of  day_man_001_21_2.mp4 is below:
-{'result': {'category': 0, 'duration': 8849}}
+{'result': {'category': 0, 'duration': 9393}}
 True
 Result of  day_woman_007_10_1.mp4 is below:
-{'result': {'category': 1, 'duration': 8166}}
+{'result': {'category': 1, 'duration': 9073}}
 True
 Result of  night_woman_005_40_8.mp4 is below:
-{'result': {'category': 4, 'duration': 2898}}
+{'result': {'category': 4, 'duration': 4813}}
 True
 Result of  night_woman_005_30_1.mp4 is below:
-{'result': {'category': 4, 'duration': 4889}}
-False
+{'result': {'category': 3, 'duration': 6618}}
+True
 Result of  night_man_001_40_2.mp4 is below:
-{'result': {'category': 4, 'duration': 4687}}
+{'result': {'category': 4, 'duration': 6840}}
 True
 Result of  day_man_001_11_1.mp4 is below:
-{'result': {'category': 0, 'duration': 24752}}
+{'result': {'category': 0, 'duration': 19889}}
 True
 Result of  night_woman_005_41_3.mp4 is below:
-{'result': {'category': 4, 'duration': 4502}}
-False
+{'result': {'category': 0, 'duration': 16969}}
+True
 Result of  night_man_002_41_4.mp4 is below:
-{'result': {'category': 0, 'duration': 15574}}
+{'result': {'category': 0, 'duration': 16107}}
 True
 Result of  night_woman_005_40_2.mp4 is below:
-{'result': {'category': 4, 'duration': 4235}}
-True
+{'result': {'category': 0, 'duration': 19875}}
+False
 Result of  night_man_001_30_1.mp4 is below:
-{'result': {'category': 3, 'duration': 4828}}
+{'result': {'category': 3, 'duration': 4793}}
 True
 Result of  night_man_002_21_2.mp4 is below:
-{'result': {'category': 0, 'duration': 18969}}
+{'result': {'category': 0, 'duration': 19552}}
 True
 Result of  night_man_001_10_2.mp4 is below:
-{'result': {'category': 1, 'duration': 7638}}
+{'result': {'category': 1, 'duration': 7244}}
 True
 Result of  night_woman_005_40_7.mp4 is below:
-{'result': {'category': 4, 'duration': 3597}}
+{'result': {'category': 4, 'duration': 4798}}
 True
 Result of  day_man_001_40_7.mp4 is below:
-{'result': {'category': 4, 'duration': 4652}}
-True
-Result of  night_woman_005_41_8.mp4 is below:
-{'result': {'category': 4, 'duration': 3796}}
+{'result': {'category': 0, 'duration': 18484}}
 False
+Result of  night_woman_005_41_8.mp4 is below:
+{'result': {'category': 0, 'duration': 13300}}
+True
 Result of  night_man_002_20_1.mp4 is below:
-{'result': {'category': 2, 'duration': 7049}}
+{'result': {'category': 2, 'duration': 6558}}
 True
 Result of  night_man_002_41_2.mp4 is below:
-{'result': {'category': 0, 'duration': 17464}}
+{'result': {'category': 0, 'duration': 16849}}
 True
 Result of  night_man_002_31_1.mp4 is below:
-{'result': {'category': 0, 'duration': 18767}}
+{'result': {'category': 0, 'duration': 17127}}
 True
 Result of  day_man_001_40_2.mp4 is below:
-{'result': {'category': 1, 'duration': 6925}}
+{'result': {'category': 1, 'duration': 6158}}
 False
 Result of  day_woman_007_20_1.mp4 is below:
-{'result': {'category': 2, 'duration': 7893}}
+{'result': {'category': 2, 'duration': 6362}}
 True
 Result of  night_woman_005_40_3.mp4 is below:
-{'result': {'category': 4, 'duration': 3105}}
+{'result': {'category': 4, 'duration': 3593}}
 True
-RESET!
 Result of  day_man_001_41_7.mp4 is below:
-{'result': {'category': 3, 'duration': 5608}}
+{'result': {'category': 3, 'duration': 5847}}
 False
 Result of  night_woman_005_00_1.mp4 is below:
-{'result': {'category': 4, 'duration': 4614}}
-False
+{'result': {'category': 0, 'duration': 15866}}
+True
 Result of  day_man_001_10_1.mp4 is below:
-{'result': {'category': 1, 'duration': 8369}}
+{'result': {'category': 1, 'duration': 6788}}
 True
 Result of  day_woman_007_41_2.mp4 is below:
-{'result': {'category': 0, 'duration': 17631}}
+{'result': {'category': 0, 'duration': 15700}}
 True
 Result of  night_man_001_10_1.mp4 is below:
-{'result': {'category': 1, 'duration': 7540}}
+{'result': {'category': 1, 'duration': 5400}}
 True
 Result of  night_woman_005_41_2.mp4 is below:
-{'result': {'category': 4, 'duration': 4580}}
-False
+{'result': {'category': 0, 'duration': 16379}}
+True
 Result of  night_man_002_30_1.mp4 is below:
-{'result': {'category': 3, 'duration': 11267}}
+{'result': {'category': 3, 'duration': 8574}}
 True
 Result of  day_man_002_20_1.mp4 is below:
-{'result': {'category': 2, 'duration': 7016}}
+{'result': {'category': 2, 'duration': 6195}}
 True
 Result of  night_woman_005_40_6.mp4 is below:
-{'result': {'category': 4, 'duration': 3766}}
+{'result': {'category': 4, 'duration': 5652}}
 True
 Result of  night_woman_005_41_5.mp4 is below:
-{'result': {'category': 4, 'duration': 4975}}
-False
+{'result': {'category': 0, 'duration': 15574}}
+True
 Result of  day_woman_007_40_4.mp4 is below:
-{'result': {'category': 4, 'duration': 7182}}
+{'result': {'category': 4, 'duration': 7274}}
 True
 Result of  day_man_001_41_6.mp4 is below:
-{'result': {'category': 0, 'duration': 14749}}
+{'result': {'category': 0, 'duration': 15105}}
 True
 Result of  day_woman_007_41_1.mp4 is below:
-{'result': {'category': 0, 'duration': 15601}}
+{'result': {'category': 0, 'duration': 14896}}
 True
-[NULL @ 0x55a6f7429940] missing picture in access unit with size 7
-[h264 @ 0x55a6faa10d40] no frame!
-[NULL @ 0x55a6f7429940] missing picture in access unit with size 7
-[h264 @ 0x55a6f9e17040] no frame!
-[NULL @ 0x55a6f7429940] missing picture in access unit with size 7
-[h264 @ 0x55a6f67cd240] no frame!
-[NULL @ 0x55a6f7429940] missing picture in access unit with size 7
-[h264 @ 0x55a6f73e72c0] no frame!
-[NULL @ 0x55a6f7429940] missing picture in access unit with size 7
-[h264 @ 0x55a6f4fa4940] no frame!
-[NULL @ 0x55a6f7429940] missing picture in access unit with size 7
-[h264 @ 0x55a6fb777680] no frame!
+[NULL @ 0x55ddce2dbf80] missing picture in access unit with size 7
+[h264 @ 0x55ddce2afc40] no frame!
+[NULL @ 0x55ddce2dbf80] missing picture in access unit with size 7
+[h264 @ 0x55ddca00f000] no frame!
+[NULL @ 0x55ddce2dbf80] missing picture in access unit with size 7
+[h264 @ 0x55ddcdc08440] no frame!
+[NULL @ 0x55ddce2dbf80] missing picture in access unit with size 7
+[h264 @ 0x55ddd458a200] no frame!
+[NULL @ 0x55ddce2dbf80] missing picture in access unit with size 7
+[h264 @ 0x55ddcab28580] no frame!
+[NULL @ 0x55ddce2dbf80] missing picture in access unit with size 7
+[h264 @ 0x55ddce8ec7c0] no frame!
 Result of  night_man_001_30_2.mp4 is below:
-{'result': {'category': 0, 'duration': 645}}
+{'result': {'category': 0, 'duration': 435}}
 False
 Result of  day_man_002_31_1.mp4 is below:
-{'result': {'category': 0, 'duration': 24964}}
+{'result': {'category': 0, 'duration': 21433}}
 True
 Result of  night_man_002_30_2.mp4 is below:
-{'result': {'category': 0, 'duration': 23130}}
+{'result': {'category': 0, 'duration': 19460}}
 False
 Result of  day_man_002_21_2.mp4 is below:
-{'result': {'category': 0, 'duration': 22684}}
+{'result': {'category': 0, 'duration': 16603}}
 True
 Result of  day_man_002_11_1.mp4 is below:
-{'result': {'category': 0, 'duration': 21505}}
+{'result': {'category': 0, 'duration': 18865}}
 True
 Result of  night_man_002_00_1.mp4 is below:
-{'result': {'category': 0, 'duration': 22732}}
+{'result': {'category': 0, 'duration': 18941}}
 True
 Result of  day_man_002_31_4.mp4 is below:
-{'result': {'category': 0, 'duration': 24563}}
+{'result': {'category': 0, 'duration': 18042}}
 True
 Result of  night_man_002_40_1.mp4 is below:
-{'result': {'category': 4, 'duration': 4018}}
-True
+{'result': {'category': 0, 'duration': 14881}}
+False
 Result of  day_man_001_41_2.mp4 is below:
-{'result': {'category': 0, 'duration': 22330}}
+{'result': {'category': 0, 'duration': 19721}}
 True
 Result of  day_woman_007_31_2.mp4 is below:
-{'result': {'category': 0, 'duration': 20290}}
+{'result': {'category': 0, 'duration': 12563}}
 True
 Result of  night_woman_005_00_2.mp4 is below:
-{'result': {'category': 4, 'duration': 5694}}
-False
+{'result': {'category': 0, 'duration': 14129}}
+True
 Result of  day_woman_007_41_4.mp4 is below:
-{'result': {'category': 0, 'duration': 15263}}
+{'result': {'category': 0, 'duration': 13670}}
 True
 Result of  day_man_002_30_3.mp4 is below:
-{'result': {'category': 3, 'duration': 7899}}
+{'result': {'category': 3, 'duration': 7004}}
 True
 Result of  day_man_001_40_3.mp4 is below:
-{'result': {'category': 4, 'duration': 4511}}
+{'result': {'category': 4, 'duration': 4847}}
 True
 Result of  day_man_002_40_6.mp4 is below:
-{'result': {'category': 4, 'duration': 3986}}
-True
-Result of  day_man_002_21_1.mp4 is below:
-{'result': {'category': 0, 'duration': 18148}}
-True
-RESET!
-Result of  night_woman_005_31_2.mp4 is below:
-{'result': {'category': 4, 'duration': 8163}}
+{'result': {'category': 0, 'duration': 18843}}
 False
+Result of  day_man_002_21_1.mp4 is below:
+{'result': {'category': 0, 'duration': 17273}}
+True
+Result of  night_woman_005_31_2.mp4 is below:
+{'result': {'category': 0, 'duration': 19974}}
+True
 Result of  day_man_002_31_3.mp4 is below:
-{'result': {'category': 0, 'duration': 15920}}
+{'result': {'category': 0, 'duration': 15775}}
 True
 Result of  day_man_001_21_1.mp4 is below:
-{'result': {'category': 0, 'duration': 17700}}
+{'result': {'category': 0, 'duration': 17958}}
 True
 Result of  day_man_001_30_2.mp4 is below:
-{'result': {'category': 0, 'duration': 19516}}
+{'result': {'category': 0, 'duration': 19851}}
 False
 Result of  night_woman_005_31_3.mp4 is below:
-{'result': {'category': 4, 'duration': 5366}}
-False
+{'result': {'category': 0, 'duration': 20381}}
+True
 Result of  day_man_002_20_2.mp4 is below:
-{'result': {'category': 2, 'duration': 6069}}
+{'result': {'category': 2, 'duration': 5825}}
 True
 Result of  day_man_002_41_4.mp4 is below:
-{'result': {'category': 0, 'duration': 18299}}
+{'result': {'category': 0, 'duration': 18641}}
 True
 Result of  day_man_002_40_2.mp4 is below:
-{'result': {'category': 4, 'duration': 3265}}
+{'result': {'category': 4, 'duration': 5580}}
 True
 Result of  day_man_002_10_2.mp4 is below:
-{'result': {'category': 0, 'duration': 18545}}
+{'result': {'category': 0, 'duration': 17214}}
 False
 Result of  day_man_002_11_2.mp4 is below:
-{'result': {'category': 0, 'duration': 15856}}
+{'result': {'category': 0, 'duration': 15109}}
 True
 Result of  day_man_001_41_5.mp4 is below:
-{'result': {'category': 0, 'duration': 10275}}
+{'result': {'category': 0, 'duration': 9711}}
 True
 Result of  day_man_002_00_1.mp4 is below:
-{'result': {'category': 0, 'duration': 18322}}
+{'result': {'category': 0, 'duration': 17523}}
 True
+
