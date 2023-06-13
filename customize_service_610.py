@@ -110,8 +110,19 @@ class fatigue_driving_detection():
         model inference function
         Here are a inference example of resnet, if you use another model, please modify this function
         """
+        getFrame_time = 0
+        pre_time = 0
+        test_time = 0
+        head_time = 0
+        eye_time = 0
+        mouth_time = 0
+        frame_num = 0
+        detect_time = 0
+        tracker_time = 0
+
         if visualize: 
             print(data)
+
         result = {"result": {"category": 0, "duration": 6000}}
 
         self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps)
@@ -137,322 +148,387 @@ class fatigue_driving_detection():
         self.cut_picture_width = 0
 
         idx = 0
-        while self.input_reader.is_open():
+        fname = self.capture + ".txt"
+        with open(fname , "w") as ifile:
+            while self.input_reader.is_open():
 
-            self.look_around_add_flag = False # reset! 
-            if visualize:
-                print("Inferring No.{0} image".format(idx))
-            idx += 1
+                self.look_around_add_flag = False # reset! 
+                if visualize:
+                    print("Inferring No.{0} image".format(idx))
+                ifile.write("\nInferring No.{0} image\n".format(idx))
+                idx += 1
+                frame_num +=1
             
-            if not self.input_reader.is_open() or self.need_reinit == 1:
-                self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps, use_dshowcapture=False, dcap=None)
-                if self.input_reader.name != source_name:
-                    print(f"Failed to reinitialize camera and got {self.input_reader.name} instead of {source_name}.")
-                    # sys.exit(1)
-                self.need_reinit = 2
-                time.sleep(0.02)
-                continue
-            if not self.input_reader.is_ready():
-                time.sleep(0.02)
-                continue
-
-            ret, frame = self.input_reader.read()
-
-            self.need_reinit = 0
-
-            try:
-                #print("IDX: {}".format(idx))
-                if idx == 1:
-                    bbox = detect(self.model, frame, self.stride, self.imgsz)
-                    #print(bbox)
-                    choose_id = 0
-                    now_id = 0
-                    previous = 0
-                    flag = False
-                    for box in bbox:
-                        if box[0] == 0:
-                            #print(box[1])
-                            if (box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2) > previous):
-                                flag = True
-                                previous = box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2)
-                                choose_id = now_id
-                        now_id += 1
-                    if flag:
-                        self.cut_range = bbox[choose_id][1]
-
-
-                if frame is not None:
-                    self.frame_num += 1
-                    
-            
-                        # in case the image is not in the right size
-                    frame = cv2.resize(frame, (self.width, self.height))
-                        # 剪裁主驾驶位
-                    if self.cut_range == []:
-                        frame = frame[:, 700:1920, :]
-                    else:
-                        left_most = int((self.cut_range[0] - self.cut_range[2]/2) * (0.81) * 1920)
-                        right_most = int((self.cut_range[0] + self.cut_range[2]/2) * (1.2) * 1920)
-                        self.cut_picture_width = right_most - left_most
-                        down_most = int((self.cut_range[1] - self.cut_range[3]/2) * (0.7) * 1080)
-                        up_most = int((self.cut_range[1] + self.cut_range[3]/2) * (1.3) * 1080)
-                        if left_most > 550:
-                                
-                            frame = frame[:, left_most:right_most, :]
-                        else:
-                            frame = frame[:, 700:1920, :]
-
-
-                    #whether_detect = False
-
-                    if self.frame_num % 2 == 1: 
-                        faces = self.tracker.predict(frame)
-                        if len(faces) > 0:
-
-                            face_num = 0
-                            max_x = 0
-                            for face_num_index, f in enumerate(faces):
-                                if max_x <= f.bbox[3]:
-                                    face_num = face_num_index
-                                    max_x = f.bbox[3]
-
-                            f = faces[face_num]
-                            f = copy.copy(f)
-
-                            # for visualization of face counter points 
-                            if visualize:
-                                for pt in f.lms:
-                                    cv2.circle(
-                                        frame,
-                                        (int(pt[1]), int(pt[0])),
-                                        3,
-                                        (255, 255, 255),
-                                        1)
-
-                            # 检测是否转头
-                            if np.abs(self.standard_pose[0] - np.abs(f.euler[0])) >= 60 or np.abs(self.standard_pose[1] - np.abs(f.euler[1])) >= 60 or \
-                                    np.abs(self.standard_pose[2] - np.abs(f.euler[2])) >= 60:
-                                self.look_around_frame += 1
-                                self.look_around_failure = 0
-                                self.look_around_add_flag = True
-                                if visualize:
-                                    print("MEMEMEMEME")
-                                    print(">>>>>-------Look around: {}".format(self.look_around_frame))
-                                if self.look_around_frame >= self.frame_3s:
-                                    result['result']['category'] = 4
-                                    break
-                                elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                                    print("RESET!!!")
-                                    self.mouth_open_frame = 0
-                                #whether_detect = True
-
-                            # 检测是否闭眼
-                            # extract the left and right eye coordinates, then use the
-                            # coordinates to compute the eye aspect ratio for both eyes
-                            leftEye = f.lms[self.lStart:self.lEnd]
-                            rightEye = f.lms[self.rStart:self.rEnd]
-                            leftEAR = eye_aspect_ratio(leftEye)
-                            rightEAR = eye_aspect_ratio(rightEye)
-                            # test = f.lms[self.teststart:self.testend]
-                            leftori = f.lms[self.lori]
-                            rightori = f.lms[self.rori]
-                            # print(rightori)
-                            # print(rightEye[1])
-                            # print(rightEye[5])
-
-                            leftLU = dist.euclidean(leftEye[1], leftori)
-                            # print(leftLU)
-                            leftLP = dist.euclidean(leftEye[5], leftori)
-                            # print(leftLP)
-                            if (leftLU > leftLP):
-                                leftL = (leftLU/leftLP)
-                            else:
-                                leftL = (leftLP/leftLU)
-
-                            leftRU = dist.euclidean(leftEye[2], leftori)
-                            leftRP = dist.euclidean(leftEye[4], leftori)
-                            if (leftRU > leftRP):
-                                leftR = (leftRU/leftRP)
-                            else:
-                                leftR = (leftRP/leftRU)
-
-                            rightLU = dist.euclidean(rightEye[1], rightori)
-                            rightLP = dist.euclidean(rightEye[5], rightori)
-                            if (rightLU > rightLP):
-                                rightL = (rightLU/rightLP)
-                            else:
-                                rightL = (rightLP/rightLU)
-
-                            rightRU = dist.euclidean(rightEye[2], rightori)
-                            rightRP = dist.euclidean(rightEye[4], rightori)
-                            if (rightRU > rightRP):
-                                rightR = (rightRU/rightRP)
-                            else:
-                                rightR = (rightRP/rightRU)
-
-                            num = 0
-                            if (leftL > 1.5): num=num+1
-                            if (leftR > 1.5): num=num+1
-                            if (rightL > 1.5): num=num+1
-                            if (rightR > 1.5): num=num+1
-                            # print(num)
-
-                            # overlap_one = ((rightori[2] < rightEye[1][2]) and (rightori[2] < rightEye[5][2]) )
-                            # # or (leftori[2] > leftEye[1][2]) or (leftori[2] > leftEye[5][2]))  
-                            # overlap_two = ((rightori[2] < rightEye[2][2]) or (rightori[2] < rightEye[4][2]) or (leftori[2] < leftEye[2][2]) or (leftori[2] < leftEye[4][2]))  
-                            # # average the eye aspect ratio together for both eyes
-                            
-                            ear = (leftEAR + rightEAR) / 2.0
-                            if (ear < self.EYE_AR_THRESH or ( ear < self.EYE_AR_THRESH + 0.05 and num >= 1) ):
-                                self.eyes_closed_frame += 1
-                                self.eyes_closed_failure = 0
-                                if visualize:
-                                    print("-----------------Close eye: {}".format(self.eyes_closed_frame))
-                                if self.eyes_closed_frame >= self.frame_3s:
-                                    result['result']['category'] = 1
-                                    break
-                            # elif (ear > self.EYE_AR_THRESH or overlap_one ) :
-                            #     self.eyes_closed_frame += 1
-                            #     self.eyes_closed_failure = 0
-                            #     if self.eyes_closed_frame >= self.frame_overlap:
-                            #         result['result']['category'] = 1
-                            #         break
-                            elif self.eyes_closed_failure >= self.failure_threshold_normal:
-                                self.eyes_closed_frame = 0
-                            else: 
-                                self.eyes_closed_failure += 1
-                                #whether_detect = True
-                            # print(ear, eyes_closed_frame)
-
-                            # 检测是否张嘴
-                            mar = mouth_aspect_ratio(f.lms)
-                            mur = mouth_upper_ratio(f.lms)
-                            mlr = mouth_lower_ratio(f.lms)
-
-                            if mar > self.MOUTH_AR_THRESH and mur < 1 and mlr < 1:
-                                self.mouth_open_frame += 1
-                                self.mouth_open_failure = 0
-                                if visualize:
-                                    print("OOOOO--------Mouth_open: {}".format(self.mouth_open_frame))
-                                if self.mouth_open_frame >= self.frame_3s:
-                                    result['result']['category'] = 2
-                                    break
-                                elif self.mouth_open_frame >= self.frame_3s/2: 
-                                    self.eyes_closed_frame = 0
-                            elif self.mouth_open_failure >= self.failure_threshold_normal:
-                                self.mouth_open_frame = 0
-                            else:
-                                self.mouth_open_failure += 1
-                            
-                            if mar > self.MOUTH_AR_THRESH and (mur >= 1 or mlr >= 1):
-                                self.look_around_frame += 1
-                                self.look_around_failure = 0
-                                self.look_around_add_flag = True
-                                if visualize:
-                                    print(">>>>>-------Look around: {}".format(self.look_around_frame))
-                                if self.look_around_frame >= self.frame_3s:
-                                    result['result']['category'] = 4
-                                    break
-                                elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                                    print("RESET!!!")
-                                    self.mouth_open_frame = 0
-                                #whether_detect = True
-                                
-                                #whether_detect = True
-    #                         print(mar)
-
-    #                         print(len(f.lms), f.euler)
-                        else:
-                            self.look_around_frame += 1
-                            self.look_around_failure = 0
-                            self.look_around_add_flag = True
-                            if visualize:
-                                print(">>>>>>>>---------Look around: {}".format(self.look_around_frame))
-                            if self.look_around_frame >= self.frame_3s:
-                                result['result']['category'] = 4
-                                break
-                            elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
-                                self.mouth_open_frame = 0
-                                print("RESET!!!")
-                            # ???
-
-
-                        if self.look_around_add_flag == False: 
-                            self.look_around_failure += 1
-                        if self.look_around_failure >= self.failure_threshold_normal: 
-                            self.look_around_frame = 0
-
-                            # 检测驾驶员是否接打电话 以及低头的人脸
-
-                    if self.frame_num % 3 == 1:                    
-                        bbox = detect(self.model, frame, self.stride, self.imgsz)
-                            # print(results)
-
-                        use_phone_flag = False
-                        for box in bbox:
-                            #if box[0] == 0:
-                            #self.face_detect = 1
-                            if box[0] == 1:
-                                self.use_phone_frame += 1
-                                self.use_phone_failure = 0
-                                self.use_phone_flag = True
-                                if visualize:
-                                    print("PPPPPPPPPP--------------Use Phone: {}".format(self.use_phone_frame))
-                                break
-                        
-                        if self.use_phone_frame >= self.frame_3s * 2 /6 - 3 and self.look_around_frame >= self.frame_3s/2: 
-                            self.look_around_frame = 0
-                            print("RESET!")
+                gFT_start = time.time()
+                if not self.input_reader.is_open() or self.need_reinit == 1:
+                    self.input_reader = InputReader(self.capture, 0, self.width, self.height, self.fps, use_dshowcapture=False, dcap=None)
+                    if self.input_reader.name != source_name:
+                        print(f"Failed to reinitialize camera and got {self.input_reader.name} instead of {source_name}.")
+                        # sys.exit(1)
+                    self.need_reinit = 2
+                    time.sleep(0.02)
+                    continue
+                if not self.input_reader.is_ready():
+                    time.sleep(0.02)
+                    continue
                 
-                        if self.use_phone_failure >= self.failure_threshold_phone: 
-                            self.use_phone_frame = 0
-                        else: 
-                            self.use_phone_failure += 1
-                        
-                        # for visualization of detection bounding box
-                        if visualize:
-                            x1 = int((box[1][0]-box[1][2]/2)*(self.cut_picture_width))
-                            y1 = int((box[1][1]-box[1][3]/2)*self.height)
-                            x2 = int((box[1][0]+box[1][2]/2)*(self.cut_picture_width))
-                            y2 = int((box[1][1]+box[1][3]/2)*self.height)
-                            cv2.rectangle(
-                                frame,
-                                (x1, y1),
-                                (x2, y2),
-                                (255, 255, 255),
-                                1)
-                            
-                    if self.use_phone_frame >= (self.frame_3s * 2/3) - 2:
-                        result['result']['category'] = 3
-                        break
+                
+                ret, frame = self.input_reader.read()
+                
+
+                self.need_reinit = 0
+                gFT_end = time.time()
+                getFrame_time += int(np.round((gFT_end - gFT_start) * 1000))
+                ifile.write(f"get frame duration: {int(np.round((gFT_end - gFT_start) * 1000))}\n")
+
+                try:
+                    #print("IDX: {}".format(idx))
+                    pre_start = time.time()
+                    if idx == 1:
+                        detec_start = time.time()
+                        bbox = detect(self.model, frame, self.stride, self.imgsz)
+                        detec_end = time.time()
+                        detect_time += int(np.round((detec_end - detec_start) * 1000))
+                        ifile.write(f"----DDDetect duration: {int(np.round((detec_end - detec_start) * 1000))}----\n")
+                        #print(bbox)
+                        choose_id = 0
+                        now_id = 0
+                        previous = 0
+                        flag = False
+                        for box in bbox:
+                            if box[0] == 0:
+                                #print(box[1])
+                                if (box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2) > previous):
+                                    flag = True
+                                    previous = box[1][2] * box[1][3] * (box[1][0] + box[1][2]/2)
+                                    choose_id = now_id
+                            now_id += 1
+                        if flag:
+                            self.cut_range = bbox[choose_id][1]
 
 
-                    result['result']['category'] = 0
-
-                    self.failures = 0
-
-                    # opencv image showing code
-                    if visualize:
-                        cv2.imshow("frame", frame)
-                        key = cv2.waitKey(50)
-
-
-                else:
-                    break
-            except Exception as e:
-                if e.__class__ == KeyboardInterrupt:
-                    print("Quitting")
-                    break
-                traceback.print_exc()
-                self.failures += 1
-                if self.failures > 30:   # 失败超过30次就默认返回
-                    break
+                    if frame is not None:
+                        self.frame_num += 1
                     
-            del frame
-        final_time = time.time()
-        duration = int(np.round((final_time - now) * 1000))
-        result['result']['duration'] = duration
-        return result
+            
+                            # in case the image is not in the right size
+                        frame = cv2.resize(frame, (self.width, self.height))
+                            # 剪裁主驾驶位
+                        if self.cut_range == []:
+                            frame = frame[:, 700:1920, :]
+                        else:
+                            left_most = int((self.cut_range[0] - self.cut_range[2]/2) * (0.81) * 1920)
+                            right_most = int((self.cut_range[0] + self.cut_range[2]/2) * (1.2) * 1920)
+                            self.cut_picture_width = right_most - left_most
+                            down_most = int((self.cut_range[1] - self.cut_range[3]/2) * (0.7) * 1080)
+                            up_most = int((self.cut_range[1] + self.cut_range[3]/2) * (1.3) * 1080)
+                            if left_most > 550:
+                                
+                                frame = frame[:, left_most:right_most, :]
+                            else:
+                                frame = frame[:, 700:1920, :]
+
+
+                        #whether_detect = False
+
+                        if self.frame_num % 2 == 1: 
+                            track_start = time.time()
+                            faces = self.tracker.predict(frame)
+                            track_end = time.time()
+                            tracker_time += int(np.round((track_end - track_start) * 1000))
+                            ifile.write(f"----TTTrack duration: {int(np.round((track_end - track_start) * 1000))}----\n")
+                            if len(faces) > 0:
+
+                                face_num = 0
+                                max_x = 0
+                                for face_num_index, f in enumerate(faces):
+                                    if max_x <= f.bbox[3]:
+                                        face_num = face_num_index
+                                        max_x = f.bbox[3]
+
+                                f = faces[face_num]
+                                f = copy.copy(f)
+
+                                # for visualization of face counter points 
+                                if visualize:
+                                    for pt in f.lms:
+                                        cv2.circle(
+                                            frame,
+                                            (int(pt[1]), int(pt[0])),
+                                            3,
+                                            (255, 255, 255),
+                                            1)
+
+                                # 检测是否转头
+                                head_start = time.time()
+                                if np.abs(self.standard_pose[0] - np.abs(f.euler[0])) >= 60 or np.abs(self.standard_pose[1] - np.abs(f.euler[1])) >= 60 or \
+                                        np.abs(self.standard_pose[2] - np.abs(f.euler[2])) >= 60:
+                                    self.look_around_frame += 1
+                                    self.look_around_failure = 0
+                                    self.look_around_add_flag = True
+                                    if visualize:
+                                        print("MEMEMEMEME")
+                                        print(">>>>>-------Look around: {}".format(self.look_around_frame))
+                                    
+                                    ifile.write(f">>>>>-------Look around: {self.look_around_frame}\n")
+                                    if self.look_around_frame >= self.frame_3s:
+                                        result['result']['category'] = 4
+                                        break
+                                    elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                        print("RESET!!!")
+                                        self.mouth_open_frame = 0
+                                    #whether_detect = True
+                                head_end = time.time()
+                                head_time = int(np.round((head_end - head_start) * 1000))
+                                ifile.write(f"head test duration: {int(np.round((head_end - head_start) * 1000))}\n")
+
+                                # 检测是否闭眼
+                                # extract the left and right eye coordinates, then use the
+                                # coordinates to compute the eye aspect ratio for both eyes
+                                eye_start = time.time()
+                                leftEye = f.lms[self.lStart:self.lEnd]
+                                rightEye = f.lms[self.rStart:self.rEnd]
+                                leftEAR = eye_aspect_ratio(leftEye)
+                                rightEAR = eye_aspect_ratio(rightEye)
+                                # test = f.lms[self.teststart:self.testend]
+                                leftori = f.lms[self.lori]
+                                rightori = f.lms[self.rori]
+                                # print(rightori)
+                                # print(rightEye[1])
+                                # print(rightEye[5])
+
+                                leftLU = dist.euclidean(leftEye[1], leftori)
+                                # print(leftLU)
+                                leftLP = dist.euclidean(leftEye[5], leftori)
+                                # print(leftLP)
+                                if (leftLU > leftLP):
+                                    leftL = (leftLU/leftLP)
+                                else:
+                                    leftL = (leftLP/leftLU)
+
+                                leftRU = dist.euclidean(leftEye[2], leftori)
+                                leftRP = dist.euclidean(leftEye[4], leftori)
+                                if (leftRU > leftRP):
+                                    leftR = (leftRU/leftRP)
+                                else:
+                                    leftR = (leftRP/leftRU)
+
+                                rightLU = dist.euclidean(rightEye[1], rightori)
+                                rightLP = dist.euclidean(rightEye[5], rightori)
+                                if (rightLU > rightLP):
+                                    rightL = (rightLU/rightLP)
+                                else:
+                                    rightL = (rightLP/rightLU)
+
+                                rightRU = dist.euclidean(rightEye[2], rightori)
+                                rightRP = dist.euclidean(rightEye[4], rightori)
+                                if (rightRU > rightRP):
+                                    rightR = (rightRU/rightRP)
+                                else:
+                                    rightR = (rightRP/rightRU)
+
+                                num = 0
+                                if (leftL > 1.5): num=num+1
+                                if (leftR > 1.5): num=num+1
+                                if (rightL > 1.5): num=num+1
+                                if (rightR > 1.5): num=num+1
+                                # print(num)
+
+                                # overlap_one = ((rightori[2] < rightEye[1][2]) and (rightori[2] < rightEye[5][2]) )
+                                # # or (leftori[2] > leftEye[1][2]) or (leftori[2] > leftEye[5][2]))  
+                                # overlap_two = ((rightori[2] < rightEye[2][2]) or (rightori[2] < rightEye[4][2]) or (leftori[2] < leftEye[2][2]) or (leftori[2] < leftEye[4][2]))  
+                                # # average the eye aspect ratio together for both eyes
+                            
+                                ear = (leftEAR + rightEAR) / 2.0
+                                if (ear < self.EYE_AR_THRESH or ( ear < self.EYE_AR_THRESH + 0.05 and num >= 1) ):
+                                    self.eyes_closed_frame += 1
+                                    self.eyes_closed_failure = 0
+                                    if visualize:
+                                        print("-----------------Close eye: {}".format(self.eyes_closed_frame))
+                                    
+                                    ifile.write("-----------------Close eye: {}\n".format(self.eyes_closed_frame))
+                                    if self.eyes_closed_frame >= self.frame_3s:
+                                        result['result']['category'] = 1
+                                        break
+                                # elif (ear > self.EYE_AR_THRESH or overlap_one ) :
+                                #     self.eyes_closed_frame += 1
+                                #     self.eyes_closed_failure = 0
+                                #     if self.eyes_closed_frame >= self.frame_overlap:
+                                #         result['result']['category'] = 1
+                                #         break
+                                elif self.eyes_closed_failure >= self.failure_threshold_normal:
+                                    self.eyes_closed_frame = 0
+                                else: 
+                                    self.eyes_closed_failure += 1
+                                    #whether_detect = True
+                                # print(ear, eyes_closed_frame)
+                                eye_end = time.time()
+                                eye_time += int(np.round((eye_end - eye_start) * 1000))
+                                ifile.write(f"eye test duration: {int(np.round((eye_end - eye_start) * 1000))}\n")
+    
+
+                                # 检测是否张嘴
+                                mouth_start = time.time()
+                                mar = mouth_aspect_ratio(f.lms)
+                                mur = mouth_upper_ratio(f.lms)
+                                mlr = mouth_lower_ratio(f.lms)
+
+                                if mar > self.MOUTH_AR_THRESH and mur < 1 and mlr < 1:
+                                    self.mouth_open_frame += 1
+                                    self.mouth_open_failure = 0
+                                    if visualize:
+                                        print("OOOOO--------Mouth_open: {}".format(self.mouth_open_frame))
+                                    if self.mouth_open_frame >= self.frame_3s:
+                                        result['result']['category'] = 2
+                                        break
+                                    elif self.mouth_open_frame >= self.frame_3s/2: 
+                                        self.eyes_closed_frame = 0
+                                elif self.mouth_open_failure >= self.failure_threshold_normal:
+                                    self.mouth_open_frame = 0
+                                else:
+                                    self.mouth_open_failure += 1
+
+                                if mar > self.MOUTH_AR_THRESH and (mur >= 1 or mlr >= 1):
+                                    self.look_around_frame += 1
+                                    self.look_around_failure = 0
+                                    self.look_around_add_flag = True
+                                    if visualize:
+                                        print(">>>>>-------Look around: {}".format(self.look_around_frame))
+
+                                    ifile.write(">>>>>-------Look around: {}\n".format(self.look_around_frame))
+                                    if self.look_around_frame >= self.frame_3s:
+                                        result['result']['category'] = 4
+                                        break
+                                    elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                        print("RESET!!!")
+                                        self.mouth_open_frame = 0
+                                    #whether_detect = True
+                                
+                                    #whether_detect = True
+    #                           print(mar)
+                                mouth_end = time.time()
+                                mouth_time += int(np.round((mouth_end - mouth_start) * 1000))
+                                ifile.write(f"mouth test duration: {int(np.round((mouth_end - mouth_start) * 1000))}")
+
+    #                           print(len(f.lms), f.euler)
+                            else:
+                                self.look_around_frame += 1
+                                self.look_around_failure = 0
+                                self.look_around_add_flag = True
+                                if visualize:
+                                    print(">>>>>>>>---------Look around: {}".format(self.look_around_frame))
+
+                                ifile.write("finally >>>>>>>>---------Look around: {}\n".format(self.look_around_frame))
+                                if self.look_around_frame >= self.frame_3s:
+                                    result['result']['category'] = 4
+                                    break
+                                elif self.look_around_frame >= self.frame_3s/3 and self.mouth_open_frame >= self.look_around_frame:
+                                    self.mouth_open_frame = 0
+                                    print("RESET!!!")
+                                # ???
+
+
+                            if self.look_around_add_flag == False: 
+                                self.look_around_failure += 1
+                            if self.look_around_failure >= self.failure_threshold_normal: 
+                                self.look_around_frame = 0
+
+                                # 检测驾驶员是否接打电话 以及低头的人脸
+
+                        if self.frame_num % 3 == 1:                    
+                            bbox = detect(self.model, frame, self.stride, self.imgsz)
+                                # print(results)
+
+                            use_phone_flag = False
+                            for box in bbox:
+                                #if box[0] == 0:
+                                #self.face_detect = 1
+                                if box[0] == 1:
+                                    self.use_phone_frame += 1
+                                    self.use_phone_failure = 0
+                                    self.use_phone_flag = True
+                                    if visualize:
+                                        print("PPPPPPPPPP--------------Use Phone: {}".format(self.use_phone_frame))
+                                    break
+                        
+                            if self.use_phone_frame >= self.frame_3s * 2 /6 - 3 and self.look_around_frame >= self.frame_3s/2: 
+                                self.look_around_frame = 0
+                                print("RESET!")
+                
+                            if self.use_phone_failure >= self.failure_threshold_phone: 
+                                self.use_phone_frame = 0
+                            else: 
+                                self.use_phone_failure += 1
+                        
+                            # for visualization of detection bounding box
+                            if visualize:
+                                x1 = int((box[1][0]-box[1][2]/2)*(self.cut_picture_width))
+                                y1 = int((box[1][1]-box[1][3]/2)*self.height)
+                                x2 = int((box[1][0]+box[1][2]/2)*(self.cut_picture_width))
+                                y2 = int((box[1][1]+box[1][3]/2)*self.height)
+                                cv2.rectangle(
+                                    frame,
+                                    (x1, y1),
+                                    (x2, y2),
+                                    (255, 255, 255),
+                                    1)
+                            
+                        if self.use_phone_frame >= (self.frame_3s * 2/3) - 2:
+                            result['result']['category'] = 3
+                            break
+
+
+                        result['result']['category'] = 0
+
+                        self.failures = 0
+
+                        # opencv image showing code
+                        if visualize:
+                            cv2.imshow("frame", frame)
+                            key = cv2.waitKey(50)
+
+
+                    else:
+                        break
+                except Exception as e:
+                    if e.__class__ == KeyboardInterrupt:
+                        print("Quitting")
+                        break
+                    traceback.print_exc()
+                    self.failures += 1
+                    if self.failures > 30:   # 失败超过30次就默认返回
+                        break
+                    
+                del frame
+            final_time = time.time()
+            duration = int(np.round((final_time - now) * 1000))
+            result['result']['duration'] = duration
+            ifile.write(f"\nResult is: {result}\n")
+
+            ave_getFrame_time = getFrame_time/frame_num
+            ifile.write(f"Average getFrameTime is: {ave_getFrame_time}\n")
+
+            #ave_pre_time = pre_time/frame_num
+            #ifile.write(f"Average pre_time is: {ave_pre_time}\n")
+
+            ave_det_time = detect_time/frame_num
+            ifile.write(f"Average pre_time is: {ave_det_time}\n")
+
+            ave_tra_time = tracker_time/frame_num
+            ifile.write(f"Average pre_time is: {ave_tra_time}\n")
+
+            #ave_test_time = test_time/frame_num
+            #ifile.write(f"Average test_time is: {ave_test_time}\n")
+
+            ave_head_time = head_time/frame_num
+            ifile.write(f"Average head time is: {ave_head_time}\n")
+
+            ave_eye_time = eye_time/frame_num
+            ifile.write(f"Average eye_time is: {ave_eye_time}\n")
+
+            ave_mouth_time = mouth_time/frame_num
+            ifile.write(f"Average mouth time is: {ave_mouth_time}\n")
+            return result
 
     def _postprocess(self, data):
         os.remove(self.capture)
@@ -461,18 +537,18 @@ class fatigue_driving_detection():
 
 if __name__ == "__main__":
 
-    mode = "Examine"
+    mode = int(input("Please type mode you want!"))
 
-    if mode == "Examine":
+    if mode == 0:
         # Set if you want to visualize the image
         visualize = True
 
         # First set the location of the model
-        folder_name = "/fatigue_driver/"
+        folder_name = "fatigue_driver/"
         detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
 
         # Second set the location of the video
-        file_name = folder_name+"Fatigue_driving_detection_video/day_man_001_10_1.mp4"
+        file_name = folder_name+"Fatigue_driving_detection_video/day_man_002_41_2.mp4"
         
         # data is not used acuatly
         data = {
@@ -493,74 +569,136 @@ if __name__ == "__main__":
         dir_folder_path = "Fatigue_driving_detection_video"
 
         # First set the location of the model
-        folder_name = "/fatigue_driver/"
+        folder_name = "fatigue_driver/"
         detector = fatigue_driving_detection("aaa", folder_name+"best.pt")
 
         all_false_file = []
+        all_false_result = []
+        all_false_true_result = []
         length = 0
+        predict_result = []
+        true_result = []
 
-        for filename in os.listdir(dir_folder_path):
-            length += 1
-            if length <= 150:
-                image_name = os.path.join(dir_folder_path, filename)
-                data = {
-                        0: {
-                            image_name : image_name
+        all_duration = []
+        all_calc_duration = []
+
+        with open("detailed_result.txt", "w") as dfile:
+            for filename in os.listdir(dir_folder_path):
+                if(filename==".DS_Store"):
+                    continue
+                dfile.write(f"---------Entering file {filename}---------\n")
+                length += 1
+                if length <= 150:
+                    image_name = os.path.join(dir_folder_path, filename)
+                    data = {
+                            0: {
+                                image_name : image_name
+                                }
                             }
-                        }
 
-                # pass the file_name directly to the capture variable to read
-                detector.capture = image_name
-                result = detector._inference(data)
+                    # pass the file_name directly to the capture variable to read
+                    detector.capture = image_name
+                    result = detector._inference(data)
 
-                print("Result of ", filename, "is below:")
-                print(result)
+                    print("Result of ", filename, "is below:")
+                    print(result)
+                    dfile.write(f"Result of {filename} is {result}\n")
+
+                    video = cv2.VideoCapture(image_name)
+                    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                    fpsOUT = video.get(cv2.CAP_PROP_FPS)
+                    true_duration = total_frames / fpsOUT
+                    video.release()
+
+                    calc_duration = 1 / (1 + np.exp(-true_duration/result["result"]["duration"]))
+                    all_calc_duration.append(calc_duration)
+                    print(f"Sigmoid duration of {filename} is {calc_duration}")
+                    dfile.write(f"Sigmoid duration of {filename} is {calc_duration}\n")
                 
-                patternstr = r"_\d{2}_"
-                match = re.search(patternstr, filename)
-                predict_result = []
-                true_result = []
+                    patternstr = r"_\d{2}_"
+                    match = re.search(patternstr, filename)
 
-                if match:
-                    matchstr = match.group()
-                    predict_result.append(result["result"]["category"])
+                    if match:
+                        matchstr = match.group()
+                        predict_result.append(result["result"]["category"])
+                        all_duration.append(result["result"]["duration"])
 
-                    if matchstr[2] == "1" or matchstr[1:3] == "00":
-                        true_result.append(0)
-                        print(result["result"]["category"] ==  0)
-                        if not(result["result"]["category"] ==  0):
-                            all_false_file.append(filename)
-                    else:
-                        true_result.append(int(matchstr[1]))
-                        print(result["result"]["category"] == int(matchstr[1]))
-                        if not(result["result"]["category"] ==  int(matchstr[1])):
-                            all_false_file.append(filename)
-        
-        with open("result1.txt", "w") as file:
+                        if matchstr[2] == "1" or matchstr[1:3] == "00":
+                            true_result.append(0)
+                            print(result["result"]["category"] ==  0)
+                            judge = result["result"]["category"] ==  0
+                            dfile.write(f"{judge}\n")
+                            if not(result["result"]["category"] ==  0):
+                                all_false_file.append(filename)
+                                all_false_result.append(result["result"]["category"])
+                                all_false_true_result.append(0)
+                        else:
+                            true_result.append(int(matchstr[1]))
+                            print(result["result"]["category"] == int(matchstr[1]))
+                            judge = result["result"]["category"] ==  int(matchstr[1])
+                            dfile.write(f"{judge}\n")
+                            if not(result["result"]["category"] ==  int(matchstr[1])):
+                                all_false_file.append(filename)
+                                all_false_result.append(result["result"]["category"])
+                                all_false_true_result.append(int(matchstr[1]))
+ 
+        with open("summarized_result.txt", "w") as file:
             file.write("All video numbers: {}\n".format(length))
             file.write("False video numbers: {}\n".format(len(all_false_file)))
+
+            idx = 0
             for item in all_false_file:
-                file.write(item + "\n")
+                file.write(item + " " + all_false_true_result[idx] + all_false_result[idx] + "\n")
+                idx += 1
+            
 
             # Calculate F1 score
-            file.write("----------------F1 score----------------\n")
+            file.write("----------------Calculating F1 score----------------\n")
 
             predict_result = np.array(predict_result)
             true_result = np.array(true_result)
             categories = [0, 1, 2, 3, 4]
             F1_score_each = []
             for category in categories:
+                print(f"--Now is category {category}--")
                 TP = np.sum((predict_result == true_result) == (predict_result == category))
                 FP = np.sum((predict_result != true_result) == (predict_result == category))
                 FN = np.sum((predict_result == true_result) == (true_result == category))
-                Precision = float(TP) / (TP + FP)
-                Recall = float(TP) / (TP + FN)
+                print(f"{TP}, {FP}, {FN}")
+                if not (TP + FP):
+                    print("Bad TP+FP")
+                    file.write("Bad TP+FP\n")
+                    Precision = 1
+                else:
+                    Precision = float(TP) / (TP + FP)
+                    print(f"Precision is: {Precision}")
+                if not (TP + FN):
+                    print("Bad TP+FN")
+                    file.write("Bad TP+FN\n")
+                    Recall = 1
+                else:
+                    Recall = float(TP) / (TP + FN)
+                    print(f"Recall is : {Recall}")
                 F1_score_temp = 2*Precision*Recall/(Precision + Recall)
+                print(f"F1-score is {F1_score_temp}")
                 F1_score_each.append(F1_score_temp)
                 file.write("For categories {}, the F1-score is {}\n".format(category, F1_score_temp))
-            F1_score_each.fillna(0)
+
+            print(F1_score_each)
+            #F1_score_each.fillna(0)
             F1_score = sum(F1_score_each) / 5.0
             file.write("The average F1_score is \n")
             file.write(str(F1_score) + "\n")
+
+            #Calculate algorithm speed
+            speed = np.sum(all_calc_duration)/len(all_calc_duration)
+            file.write("The average speed is \n")
+            file.write(str(speed) + "\n")
+
+            #Calculate total score
+            score = 0.7*F1_score+0.3*speed
+            file.write("The total score is \n")
+            file.write(str(score) + "\n")
+
 
 
