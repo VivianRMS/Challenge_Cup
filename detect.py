@@ -24,7 +24,7 @@ def detect(model, frame, stride, imgsz):
 
     pred = model(img, augment=False)[0]
 
-    pred = non_max_suppression(pred, 0.5, 0.45,  agnostic=False)
+    pred = non_max_suppression(pred, 0.28, 0.45,  agnostic=False)
 
     for i, det in enumerate(pred):
         gn = torch.tensor(frame.shape)[[1, 0, 1, 0]]
